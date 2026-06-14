@@ -606,12 +606,55 @@ function sincronizar() {
   s.onerror=()=>{clearTimeout(timeout);const old=document.getElementById('mozi-jsonp');if(old)old.remove();setStatus('Error al conectar','');document.getElementById('sync-btn').disabled=false;};
   document.head.appendChild(s);
 }
-async function enviarASheets(payload) {
-  if(!scriptURL)return;
-  try{
-    const encoded=encodeURIComponent(JSON.stringify(payload.data));
-    await fetch(scriptURL+'?action=set&data='+encoded+'&t='+Date.now(),{method:'GET',mode:'no-cors'});
-  }catch(e){}
+function enviarASheets(payload) {
+  return new Promise((resolve) => {
+    if (!scriptURL) { resolve(); return; }
+    // Usamos un iframe oculto + form POST para evitar limite de URL
+    // y CORS. Apps Script acepta POST via iframe sin bloquear.
+    const iframeId = 'mozi-save-iframe';
+    const formId   = 'mozi-save-form';
+    // Limpiar anteriores
+    const prevIframe = document.getElementById(iframeId);
+    const prevForm   = document.getElementById(formId);
+    if (prevIframe) prevIframe.remove();
+    if (prevForm)   prevForm.remove();
+
+    // Crear iframe oculto
+    const iframe = document.createElement('iframe');
+    iframe.id   = iframeId;
+    iframe.name = iframeId;
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    // Crear form que postea al iframe
+    const form = document.createElement('form');
+    form.id     = formId;
+    form.method = 'POST';
+    form.action = scriptURL;
+    form.target = iframeId;
+    form.style.display = 'none';
+
+    const addField = (name, val) => {
+      const inp = document.createElement('input');
+      inp.type  = 'hidden';
+      inp.name  = name;
+      inp.value = val;
+      form.appendChild(inp);
+    };
+    addField('action', 'set');
+    addField('data', JSON.stringify(payload.data));
+    document.body.appendChild(form);
+
+    // Timeout de seguridad
+    const timeout = setTimeout(() => { resolve(); }, 8000);
+
+    iframe.onload = () => {
+      clearTimeout(timeout);
+      resolve();
+    };
+
+    form.submit();
+  });
 }
 function setStatus(msg,tipo){
   const el=document.getElementById('status-bar');
