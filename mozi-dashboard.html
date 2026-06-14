@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MOZI — GrowyFunnels</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    :root {
+      --bg: #f5f5f3;
+      --surface: #ffffff;
+      --surface2: #f0efed;
+      --border: rgba(0,0,0,0.09);
+      --border2: rgba(0,0,0,0.15);
+      --text: #1a1a1a;
+      --text2: #555;
+      --text3: #999;
+      --blue: #185FA5;
+      --blue-light: #E6F1FB;
+      --blue-mid: #B5D4F4;
+      --green: #0F6E56;
+      --green-light: #E1F5EE;
+      --amber: #BA7517;
+      --amber-light: #FAEEDA;
+      --amber-mid: #FAC775;
+      --red: #A32D2D;
+      --red-light: #FCEBEB;
+      --teal: #0F6E56;
+      --radius: 10px;
+      --radius-lg: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+    }
+    /* TOPBAR */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 0.5px solid var(--border);
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .topbar-brand { font-size: 15px; font-weight: 600; color: var(--blue); letter-spacing: -.01em; }
+    .topbar-brand span { color: var(--text3); font-weight: 400; font-size: 13px; margin-left: 8px; }
+    .sync-btn {
+      background: none; border: 0.5px solid var(--border2);
+      border-radius: 8px; padding: 6px 14px;
+      font-size: 12px; font-weight: 500; color: var(--text2);
+      cursor: pointer; font-family: inherit;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .sync-btn:hover { background: var(--surface2); }
+    .sync-btn svg { width: 14px; height: 14px; }
+    /* LAYOUT */
+    .main { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
+    /* NORTH STAR */
+    .north-star {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+    }
+    .ns-item {}
+    .ns-label { font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 5px; }
+    .ns-value { font-size: 24px; font-weight: 600; color: var(--blue); }
+    .ns-value.neutral { color: var(--text); }
+    .ns-value.warn { color: var(--amber); font-size: 16px; margin-top: 4px; }
+    .ns-value.good { color: var(--green); }
+    /* GRID */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+    /* CARD */
+    .card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+    }
+    .card-title {
+      font-size: 11px; font-weight: 600; color: var(--text3);
+      text-transform: uppercase; letter-spacing: .07em;
+      margin-bottom: 16px;
+    }
+    /* FUNNEL */
+    .funnel-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
+    .funnel-stage {
+      flex: 1; min-width: 60px; text-align: center;
+      background: var(--surface2); border-radius: 8px; padding: 10px 6px;
+    }
+    .funnel-n { font-size: 22px; font-weight: 600; color: var(--text); }
+    .funnel-lbl { font-size: 10px; color: var(--text3); margin-top: 2px; }
+    /* PIPELINE TABLE */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; padding: 0 10px 10px; }
+    td { padding: 10px; border-top: 0.5px solid var(--border); color: var(--text); vertical-align: middle; }
+    tr:hover td { background: var(--surface2); }
+    .badge {
+      display: inline-block; font-size: 11px; font-weight: 500;
+      padding: 3px 9px; border-radius: 99px;
+    }
+    .b-Prospecto,.b-Contactado { background: var(--blue-light); color: #0C447C; }
+    .b-Conversacion { background: var(--amber-light); color: #633806; }
+    .b-Reunion { background: #EAF3DE; color: #27500A; }
+    .b-Propuesta { background: var(--green-light); color: #085041; }
+    .b-Cliente { background: #d1f5e8; color: #085041; font-weight: 600; }
+    .b-SinInteres { background: var(--red-light); color: var(--red); }
+    /* PROGRESS */
+    .prog-row { margin-bottom: 14px; }
+    .prog-header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; }
+    .prog-label { color: var(--text2); }
+    .prog-pct { font-weight: 600; color: var(--text); }
+    .prog-bg { background: var(--surface2); border-radius: 99px; height: 7px; overflow: hidden; }
+    .prog-fill { height: 100%; border-radius: 99px; transition: width .5s ease; }
+    .fill-blue { background: var(--blue); }
+    .fill-green { background: var(--green); }
+    .fill-teal { background: var(--teal); }
+    /* METRICS */
+    .metric-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-bottom: 16px; }
+    .metric-item { background: var(--surface2); border-radius: 8px; padding: 12px 14px; }
+    .metric-lbl { font-size: 11px; color: var(--text3); margin-bottom: 3px; }
+    .metric-val { font-size: 20px; font-weight: 600; color: var(--text); }
+    .metric-val.accent { color: var(--blue); }
+    /* TABS */
+    .tabs { display: flex; gap: 2px; background: var(--surface2); border-radius: 10px; padding: 3px; margin-bottom: 20px; }
+    .tab {
+      flex: 1; text-align: center; padding: 8px 4px;
+      font-size: 12px; font-weight: 500; color: var(--text2);
+      cursor: pointer; border-radius: 8px; border: none;
+      background: none; font-family: inherit; transition: all .15s;
+    }
+    .tab.active { background: var(--surface); color: var(--text); border: 0.5px solid var(--border); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    /* FORM */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
+    .field-label { font-size: 11px; font-weight: 500; color: var(--text2); display: block; margin-bottom: 4px; }
+    input, select, textarea {
+      width: 100%; padding: 9px 12px; font-size: 13px;
+      border-radius: 8px; border: 0.5px solid var(--border2);
+      background: var(--surface); color: var(--text);
+      font-family: inherit;
+    }
+    input:focus, select:focus { outline: none; border-color: var(--blue); }
+    .btn {
+      background: var(--blue); color: #fff; border: none;
+      border-radius: 8px; padding: 10px 20px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: inherit; width: 100%; transition: background .15s;
+    }
+    .btn:hover { background: #0C447C; }
+    .btn:disabled { background: var(--text3); cursor: not-allowed; }
+    .btn-ghost {
+      background: none; border: 0.5px solid var(--border2);
+      border-radius: 8px; padding: 8px 14px;
+      font-size: 12px; color: var(--text2); cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-ghost:hover { background: var(--surface2); }
+    .btn-del {
+      background: none; border: 0.5px solid var(--border);
+      border-radius: 6px; padding: 4px 8px;
+      font-size: 11px; color: var(--text3); cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-del:hover { border-color: var(--red); color: var(--red); }
+    /* RITUALES */
+    .ritual-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 0.5px solid var(--border); }
+    .ritual-row input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--blue); flex-shrink: 0; cursor: pointer; }
+    .ritual-lbl { font-size: 13px; color: var(--text); cursor: pointer; }
+    .ritual-lbl.done { text-decoration: line-through; color: var(--text3); }
+    /* STATUS */
+    .status-bar {
+      font-size: 11px; color: var(--text3); text-align: right;
+      margin-bottom: 8px; min-height: 16px;
+    }
+    .status-bar.saving { color: var(--amber); }
+    .status-bar.saved { color: var(--green); }
+    .status-bar.error { color: var(--red); }
+    /* ALERT */
+    .alert { border-radius: 8px; padding: 12px 16px; font-size: 13px; line-height: 1.5; margin-bottom: 14px; }
+    .alert-info { background: var(--blue-light); color: #0C447C; border: 0.5px solid var(--blue-mid); }
+    .alert-warn { background: var(--amber-light); color: #633806; border: 0.5px solid var(--amber-mid); }
+    /* CHART */
+    .chart-wrap { position: relative; width: 100%; height: 200px; margin-top: 16px; }
+    /* SETUP */
+    .setup-overlay {
+      position: fixed; inset: 0; background: rgba(245,245,243,.97);
+      z-index: 200; display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .setup-card {
+      background: var(--surface); border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg); padding: 32px;
+      max-width: 520px; width: 100%;
+    }
+    .setup-card h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .setup-card p { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 20px; }
+    .setup-step { background: var(--surface2); border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; font-size: 13px; line-height: 1.6; }
+    .setup-step strong { color: var(--text); }
+    .setup-step code { background: var(--blue-light); color: var(--blue); padding: 1px 6px; border-radius: 4px; font-family: monospace; font-size: 12px; }
+    .setup-field { margin: 16px 0 20px; }
+    .empty-state { text-align: center; padding: 32px 16px; color: var(--text3); font-size: 13px; }
+    .divider { border: none; border-top: 0.5px solid var(--border); margin: 16px 0; }
+    .section-gap { margin-bottom: 20px; }
+    .proy-card { background: var(--surface2); border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; }
+    .proy-label { font-size: 11px; color: var(--text3); margin-bottom: 4px; }
+    .proy-val { font-size: 22px; font-weight: 600; color: var(--blue); }
+    .proy-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- SETUP OVERLAY -->
+<div class="setup-overlay" id="setup-overlay">
+  <div class="setup-card">
+    <h2>Configuración inicial — MOZI</h2>
+    <p>Para guardar tus datos en Google Sheets necesitás crear un script que actúe como backend. Son 3 pasos, tarda menos de 5 minutos.</p>
+
+    <div class="setup-step">
+      <strong>Paso 1.</strong> Entrá a <a href="https://sheets.new" target="_blank" style="color:var(--blue)">sheets.new</a> y creá una planilla nueva. Nombrala <code>MOZI GrowyFunnels</code>.
+    </div>
+    <div class="setup-step">
+      <strong>Paso 2.</strong> En la planilla, andá a <strong>Extensiones → Apps Script</strong>. Borrá el código que hay y pegá el código del archivo <code>apps-script.gs</code> que te generé. Guardá y hacé clic en <strong>Implementar → Nueva implementación</strong> → tipo <em>Aplicación web</em> → acceso <em>Cualquier persona</em>. Copiá la URL que te da.
+    </div>
+    <div class="setup-step">
+      <strong>Paso 3.</strong> Pegá esa URL acá abajo y hacé clic en Guardar.
+    </div>
+
+    <div class="setup-field">
+      <label class="field-label">URL de tu Apps Script</label>
+      <input type="url" id="setup-url" placeholder="https://script.google.com/macros/s/...../exec">
+    </div>
+    <button class="btn" onclick="guardarConfig()">Guardar y abrir MOZI</button>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">MOZI <span>GrowyFunnels</span></div>
+  <button class="sync-btn" onclick="sincronizar()" id="sync-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 018-8V2l4 4-4 4V6a6 6 0 106 6h2a8 8 0 01-8 8 8 8 0 01-8-8z"/></svg>
+    Sincronizar
+  </button>
+</div>
+
+<div class="main">
+
+  <div class="status-bar" id="status-bar"></div>
+
+  <!-- NORTH STAR -->
+  <div class="north-star">
+    <div class="ns-item">
+      <div class="ns-label">Facturación / meta</div>
+      <div class="ns-value" id="ns-fact">USD 0 / 5.000</div>
+    </div>
+    <div class="ns-item">
+      <div class="ns-label">Clientes activos</div>
+      <div class="ns-value" id="ns-cli">0 / 15</div>
+    </div>
+    <div class="ns-item">
+      <div class="ns-label">Días restantes</div>
+      <div class="ns-value neutral" id="ns-dias">181</div>
+    </div>
+    <div class="ns-item">
+      <div class="ns-label">Ritmo necesario</div>
+      <div class="ns-value warn" id="ns-ritmo">—</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('pipeline')">Pipeline</button>
+    <button class="tab" onclick="switchTab('metricas')">Métricas</button>
+    <button class="tab" onclick="switchTab('rituales')">Rituales</button>
+    <button class="tab" onclick="switchTab('cargar')">+ Cargar</button>
+  </div>
+
+  <!-- TAB PIPELINE -->
+  <div id="tab-pipeline" class="tab-panel active">
+    <div class="funnel-row" id="funnel"></div>
+    <div class="card">
+      <div class="card-title">Prospectos activos</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th style="width:24%">Negocio</th>
+            <th style="width:14%">Rubro</th>
+            <th style="width:15%">Estado</th>
+            <th style="width:13%">Valor pot.</th>
+            <th style="width:26%">Próx. acción</th>
+            <th style="width:8%"></th>
+          </tr></thead>
+          <tbody id="pipeline-body"></tbody>
+        </table>
+      </div>
+      <div id="pipeline-empty" class="empty-state" style="display:none">
+        Sin prospectos todavía. Usá la pestaña "+ Cargar".
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB MÉTRICAS -->
+  <div id="tab-metricas" class="tab-panel">
+    <div class="metric-grid">
+      <div class="metric-item"><div class="metric-lbl">Total en pipeline</div><div class="metric-val" id="m-total">0</div></div>
+      <div class="metric-item"><div class="metric-lbl">En negociación</div><div class="metric-val accent" id="m-neg">0</div></div>
+      <div class="metric-item"><div class="metric-lbl">Propuestas enviadas</div><div class="metric-val" id="m-prop">0</div></div>
+      <div class="metric-item"><div class="metric-lbl">Tasa de cierre</div><div class="metric-val" id="m-cierre">0%</div></div>
+    </div>
+    <div class="card section-gap">
+      <div class="card-title">Progreso hacia la meta</div>
+      <div class="prog-row">
+        <div class="prog-header"><span class="prog-label">Facturación mensual</span><span class="prog-pct" id="pct-f">0%</span></div>
+        <div class="prog-bg"><div class="prog-fill fill-blue" id="bar-f" style="width:0%"></div></div>
+      </div>
+      <div class="prog-row">
+        <div class="prog-header"><span class="prog-label">Clientes activos</span><span class="prog-pct" id="pct-c">0%</span></div>
+        <div class="prog-bg"><div class="prog-fill fill-green" id="bar-c" style="width:0%"></div></div>
+      </div>
+      <div class="prog-row">
+        <div class="prog-header"><span class="prog-label">Pipeline value (vs 3x meta)</span><span class="prog-pct" id="pct-p">0%</span></div>
+        <div class="prog-bg"><div class="prog-fill fill-teal" id="bar-p" style="width:0%"></div></div>
+      </div>
+    </div>
+    <div class="proy-card">
+      <div class="proy-label">Proyección ingreso (30% conversión del pipeline activo)</div>
+      <div class="proy-val" id="m-proy">USD 0</div>
+      <div class="proy-sub" id="m-proy-sub">Cargá prospectos con valor potencial</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Distribución por etapa</div>
+      <div class="chart-wrap">
+        <canvas id="convChart" role="img" aria-label="Cantidad de prospectos por etapa del funnel">Sin datos.</canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB RITUALES -->
+  <div id="tab-rituales" class="tab-panel">
+    <div class="card">
+      <div class="card-title">Secuencia de arranque — hoy</div>
+      <div id="rituales-list"></div>
+    </div>
+    <div class="alert alert-info" style="margin-top:16px">
+      Antes de arrancar: ¿esta tarea genera <strong>conversaciones, reuniones, propuestas o clientes</strong>?<br>
+      Si no genera ninguna de esas cuatro cosas → no es prioridad hoy.
+    </div>
+    <div class="alert alert-warn">
+      <strong>Misión 3-2-1:</strong> 3 tareas DINERO · 2 tareas OPERACIÓN · 1 tarea CRECIMIENTO
+    </div>
+  </div>
+
+  <!-- TAB CARGAR -->
+  <div id="tab-cargar" class="tab-panel">
+    <div class="card section-gap">
+      <div class="card-title">Nuevo prospecto</div>
+      <div class="form-grid">
+        <div><label class="field-label">Negocio *</label><input type="text" id="f-neg" placeholder="Ej: Ferretería El Clavo"></div>
+        <div><label class="field-label">Contacto</label><input type="text" id="f-con" placeholder="Nombre del dueño"></div>
+      </div>
+      <div class="form-grid">
+        <div>
+          <label class="field-label">Rubro</label>
+          <select id="f-rub">
+            <option value="">— Seleccioná —</option>
+            <option>Inmobiliaria</option><option>Estetica</option><option>Restaurante</option>
+            <option>Gimnasio</option><option>Kiosco</option><option>Carniceria</option>
+            <option>Ferreteria</option><option>Perfumeria</option><option>Calzados</option>
+            <option>Tienda de Ropa</option><option>Estudio Jurídico</option><option>Otro</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Ciudad</label>
+          <select id="f-ciu"><option>San Pedro</option><option>Baradero</option><option>Otra</option></select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div>
+          <label class="field-label">Estado *</label>
+          <select id="f-est">
+            <option value="Prospecto">Prospecto</option>
+            <option value="Contactado">Contactado</option>
+            <option value="Conversacion">Conversación</option>
+            <option value="Reunion">Reunión</option>
+            <option value="Propuesta">Propuesta</option>
+            <option value="Cliente">Cliente</option>
+            <option value="Sin Interes">Sin interés</option>
+          </select>
+        </div>
+        <div><label class="field-label">Valor potencial (USD)</label><input type="number" id="f-val" placeholder="Ej: 350" min="0"></div>
+      </div>
+      <div style="margin-bottom:10px">
+        <label class="field-label">Próxima acción</label>
+        <input type="text" id="f-acc" placeholder="Ej: Llamar martes para confirmar reunión">
+      </div>
+      <div style="margin-bottom:16px">
+        <label class="field-label">Facturación mensual real (USD) — solo si es Cliente</label>
+        <input type="number" id="f-fac" placeholder="Ej: 300" min="0">
+      </div>
+      <button class="btn" id="btn-agregar" onclick="agregarProspecto()">+ Agregar al pipeline</button>
+    </div>
+
+    <div class="card section-gap">
+      <div class="card-title">Actualizar facturación total real del mes</div>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:12px">Ingresá el total que estás facturando este mes (suma de todos tus clientes activos).</p>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="number" id="f-totfac" placeholder="Total USD este mes" style="flex:1" min="0">
+        <button class="btn" style="width:auto;white-space:nowrap" onclick="setFacturacion()">Guardar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="color:var(--red)">Zona de reseteo</div>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:12px">Borrá todos los datos. No se puede deshacer.</p>
+      <button class="btn-ghost" onclick="confirmarReset()" style="border-color:var(--red);color:var(--red)">Borrar todos los datos</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const META_USD = 5000;
+const META_CLI = 15;
+const START_DATE = new Date('2026-06-13');
+const DIAS_OBJ = 181;
+const LS_URL = 'mozi_script_url';
+const LS_DATA = 'mozi_data_v2';
+const LS_RITUALES = 'mozi_rituales_v1';
+
+let state = { prospectos: [], facturacionReal: 0, nextId: 1 };
+let scriptURL = '';
+let chartInst = null;
+let saveTimer = null;
+
+const RITUALES = [
+  'Abrí MOZI',
+  'Revisé el Pipeline',
+  'Revisé seguimientos pendientes',
+  'Definí mi Misión 3-2-1',
+  'Ejecuté la primera tarea crítica',
+  'No abrí redes antes de la primera misión',
+];
+let ritualesEstado = RITUALES.map(() => false);
+
+// ── INIT ──────────────────────────────────────────────
+function init() {
+  scriptURL = localStorage.getItem(LS_URL) || '';
+  if (!scriptURL) {
+    document.getElementById('setup-overlay').style.display = 'flex';
+    return;
+  }
+  document.getElementById('setup-overlay').style.display = 'none';
+  cargarLocal();
+  sincronizar();
+  cargarRituales();
+  actualizarTodo();
+  renderRituales();
+}
+
+// ── CONFIG ────────────────────────────────────────────
+function guardarConfig() {
+  const url = document.getElementById('setup-url').value.trim();
+  if (!url.startsWith('https://script.google.com')) {
+    alert('Por favor pegá una URL válida de Google Apps Script.');
+    return;
+  }
+  localStorage.setItem(LS_URL, url);
+  scriptURL = url;
+  document.getElementById('setup-overlay').style.display = 'none';
+  sincronizar();
+}
+
+// ── LOCAL STORAGE ─────────────────────────────────────
+function cargarLocal() {
+  try {
+    const raw = localStorage.getItem(LS_DATA);
+    if (raw) state = JSON.parse(raw);
+  } catch(e) {}
+}
+
+function guardarLocal() {
+  localStorage.setItem(LS_DATA, JSON.stringify(state));
+}
+
+function cargarRituales() {
+  try {
+    const hoy = new Date().toISOString().slice(0,10);
+    const raw = localStorage.getItem(LS_RITUALES);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.fecha === hoy) ritualesEstado = parsed.estados;
+    }
+  } catch(e) {}
+}
+
+function guardarRituales() {
+  const hoy = new Date().toISOString().slice(0,10);
+  localStorage.setItem(LS_RITUALES, JSON.stringify({ fecha: hoy, estados: ritualesEstado }));
+}
+
+// ── GOOGLE SHEETS SYNC ────────────────────────────────
+async function sincronizar() {
+  if (!scriptURL) return;
+  setStatus('Sincronizando...', 'saving');
+  document.getElementById('sync-btn').disabled = true;
+  try {
+    const res = await fetch(scriptURL + '?action=get', { method: 'GET' });
+    const data = await res.json();
+    if (data && data.prospectos !== undefined) {
+      state = data;
+      guardarLocal();
+      actualizarTodo();
+      setStatus('Sincronizado con Google Sheets', 'saved');
+    } else {
+      setStatus('Sin datos en Sheets todavía', '');
+    }
+  } catch(e) {
+    setStatus('Sin conexión — usando datos locales', '');
+  }
+  document.getElementById('sync-btn').disabled = false;
+  setTimeout(() => setStatus('', ''), 4000);
+}
+
+async function enviarASheets(payload) {
+  if (!scriptURL) return;
+  try {
+    await fetch(scriptURL, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  } catch(e) {}
+}
+
+function setStatus(msg, tipo) {
+  const el = document.getElementById('status-bar');
+  el.textContent = msg;
+  el.className = 'status-bar' + (tipo ? ' ' + tipo : '');
+}
+
+// ── NORTE ─────────────────────────────────────────────
+function diasRestantes() {
+  const fin = new Date(START_DATE);
+  fin.setDate(fin.getDate() + DIAS_OBJ);
+  return Math.max(0, Math.ceil((fin - new Date()) / 86400000));
+}
+
+function actualizarNorthStar() {
+  const dias = diasRestantes();
+  const fact = state.facturacionReal || 0;
+  const cli = state.prospectos.filter(p => p.estado === 'Cliente').length;
+  const pctF = Math.min(100, Math.round((fact / META_USD) * 100));
+  const pctC = Math.min(100, Math.round((cli / META_CLI) * 100));
+
+  document.getElementById('ns-fact').textContent = `USD ${fact.toLocaleString()} / ${META_USD.toLocaleString()}`;
+  document.getElementById('ns-cli').textContent = `${cli} / ${META_CLI}`;
+  document.getElementById('ns-dias').textContent = dias;
+
+  const falta = META_USD - fact;
+  const sem = Math.ceil(dias / 7);
+  const rEl = document.getElementById('ns-ritmo');
+  if (falta <= 0) { rEl.textContent = 'Meta alcanzada'; rEl.className = 'ns-value good'; }
+  else if (sem > 0) { rEl.textContent = `USD ${Math.ceil(falta/sem).toLocaleString()}/sem`; rEl.className = 'ns-value warn'; }
+
+  document.getElementById('pct-f').textContent = pctF + '%';
+  document.getElementById('bar-f').style.width = pctF + '%';
+  document.getElementById('pct-c').textContent = pctC + '%';
+  document.getElementById('bar-c').style.width = pctC + '%';
+
+  const activos = state.prospectos.filter(p => !['Sin Interes','Cliente'].includes(p.estado));
+  const totalPipe = activos.reduce((s,p) => s+(p.valor||0), 0);
+  const pipePct = Math.min(100, Math.round((totalPipe/(META_USD*3))*100));
+  document.getElementById('pct-p').textContent = pipePct + '%';
+  document.getElementById('bar-p').style.width = pipePct + '%';
+
+  const proy = Math.round(totalPipe * 0.3);
+  document.getElementById('m-proy').textContent = `USD ${proy.toLocaleString()}`;
+  if (proy >= META_USD) document.getElementById('m-proy-sub').textContent = 'El pipeline proyecta alcanzar la meta al 30% de cierre';
+  else if (proy > 0) document.getElementById('m-proy-sub').textContent = `Faltan USD ${(META_USD-proy).toLocaleString()} para la meta`;
+  else document.getElementById('m-proy-sub').textContent = 'Cargá prospectos con valor potencial';
+}
+
+function actualizarMetricas() {
+  const ps = state.prospectos;
+  const activos = ps.filter(p => p.estado !== 'Sin Interes');
+  const neg = ps.filter(p => ['Conversacion','Reunion'].includes(p.estado)).length;
+  const prop = ps.filter(p => p.estado === 'Propuesta').length;
+  const cli = ps.filter(p => p.estado === 'Cliente').length;
+  document.getElementById('m-total').textContent = activos.length;
+  document.getElementById('m-neg').textContent = neg;
+  document.getElementById('m-prop').textContent = prop;
+  document.getElementById('m-cierre').textContent = (ps.length > 0 ? Math.round((cli/ps.length)*100) : 0) + '%';
+}
+
+function actualizarFunnel() {
+  const etapas = [['Prospecto','Prospecto'],['Contactado','Contactado'],['Conversacion','Conversación'],['Reunion','Reunión'],['Propuesta','Propuesta'],['Cliente','Cliente']];
+  document.getElementById('funnel').innerHTML = etapas.map(([k,l]) => {
+    const n = state.prospectos.filter(p => p.estado === k).length;
+    return `<div class="funnel-stage"><div class="funnel-n">${n}</div><div class="funnel-lbl">${l}</div></div>`;
+  }).join('');
+}
+
+function renderPipeline() {
+  const activos = state.prospectos.filter(p => p.estado !== 'Sin Interes');
+  const empty = document.getElementById('pipeline-empty');
+  const tbody = document.getElementById('pipeline-body');
+  if (!activos.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = activos.map(p => `
+    <tr>
+      <td style="font-weight:500;max-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.negocio}">${p.negocio}</td>
+      <td style="color:var(--text2)">${p.rubro||'—'}</td>
+      <td><span class="badge b-${(p.estado||'').replace(' ','')}">${p.estado}</span></td>
+      <td>${p.valor ? 'USD '+Number(p.valor).toLocaleString() : '—'}</td>
+      <td style="color:var(--text2);font-size:12px;max-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.accion||''}">${p.accion||'—'}</td>
+      <td><button class="btn-del" onclick="eliminar(${p._id})">✕</button></td>
+    </tr>
+  `).join('');
+}
+
+function renderChart() {
+  const etapas = ['Prospecto','Contactado','Conversacion','Reunion','Propuesta','Cliente'];
+  const labels = ['Prospecto','Contactado','Conversación','Reunión','Propuesta','Cliente'];
+  const counts = etapas.map(e => state.prospectos.filter(p => p.estado===e).length);
+  const colors = ['#B5D4F4','#85B7EB','#FAC775','#9FE1CB','#5DCAA5','#0F6E56'];
+  if (chartInst) { chartInst.destroy(); chartInst = null; }
+  chartInst = new Chart(document.getElementById('convChart').getContext('2d'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Prospectos', data: counts, backgroundColor: colors, borderRadius: 6, borderSkipped: false }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#999', font: { size: 11, family: 'Montserrat' }, autoSkip: false }, grid: { display: false } },
+        y: { ticks: { color: '#999', stepSize: 1 }, grid: { color: 'rgba(0,0,0,.05)' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+function renderRituales() {
+  document.getElementById('rituales-list').innerHTML = RITUALES.map((r,i) => `
+    <div class="ritual-row">
+      <input type="checkbox" id="rit${i}" ${ritualesEstado[i]?'checked':''} onchange="toggleRitual(${i})">
+      <label for="rit${i}" class="ritual-lbl${ritualesEstado[i]?' done':''}">${r}</label>
+    </div>
+  `).join('');
+}
+
+function toggleRitual(i) {
+  ritualesEstado[i] = !ritualesEstado[i];
+  renderRituales();
+  guardarRituales();
+}
+
+function actualizarTodo() {
+  actualizarNorthStar();
+  actualizarMetricas();
+  actualizarFunnel();
+  renderPipeline();
+}
+
+// ── ACCIONES ──────────────────────────────────────────
+async function agregarProspecto() {
+  const negocio = document.getElementById('f-neg').value.trim();
+  if (!negocio) { alert('El nombre del negocio es obligatorio.'); return; }
+  const estado = document.getElementById('f-est').value;
+  const valor = parseFloat(document.getElementById('f-val').value) || 0;
+  const facReal = parseFloat(document.getElementById('f-fac').value) || 0;
+  if (estado === 'Cliente' && facReal > 0) state.facturacionReal = (state.facturacionReal||0) + facReal;
+  const prospecto = {
+    _id: state.nextId++,
+    negocio,
+    contacto: document.getElementById('f-con').value.trim(),
+    rubro: document.getElementById('f-rub').value,
+    ciudad: document.getElementById('f-ciu').value,
+    estado, valor,
+    accion: document.getElementById('f-acc').value.trim(),
+    fecha: new Date().toISOString().slice(0,10),
+  };
+  state.prospectos.push(prospecto);
+  ['f-neg','f-con','f-val','f-acc','f-fac'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('f-rub').selectedIndex = 0;
+  document.getElementById('f-est').selectedIndex = 0;
+  guardarLocal();
+  actualizarTodo();
+  switchTab('pipeline');
+  setStatus('Guardando en Sheets...', 'saving');
+  await enviarASheets({ action: 'set', data: state });
+  setStatus('Guardado', 'saved');
+  setTimeout(() => setStatus('',''), 2500);
+}
+
+async function eliminar(id) {
+  const p = state.prospectos.find(x => x._id === id);
+  if (!p) return;
+  if (!confirm(`¿Eliminás "${p.negocio}" del pipeline?`)) return;
+  state.prospectos = state.prospectos.filter(x => x._id !== id);
+  guardarLocal();
+  actualizarTodo();
+  setStatus('Guardando...', 'saving');
+  await enviarASheets({ action: 'set', data: state });
+  setStatus('Guardado', 'saved');
+  setTimeout(() => setStatus('',''), 2500);
+}
+
+async function setFacturacion() {
+  const val = parseFloat(document.getElementById('f-totfac').value);
+  if (isNaN(val) || val < 0) return;
+  state.facturacionReal = val;
+  document.getElementById('f-totfac').value = '';
+  guardarLocal();
+  actualizarTodo();
+  setStatus('Guardando...', 'saving');
+  await enviarASheets({ action: 'set', data: state });
+  setStatus('Guardado', 'saved');
+  setTimeout(() => setStatus('',''), 2500);
+}
+
+async function confirmarReset() {
+  if (!confirm('¿Seguro que querés borrar todos los datos? Esta acción no se puede deshacer.')) return;
+  state = { prospectos: [], facturacionReal: 0, nextId: 1 };
+  guardarLocal();
+  actualizarTodo();
+  await enviarASheets({ action: 'set', data: state });
+  setStatus('Datos borrados', 'saved');
+  setTimeout(() => setStatus('',''), 2500);
+}
+
+function switchTab(name) {
+  const tabs = ['pipeline','metricas','rituales','cargar'];
+  tabs.forEach((t,i) => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===name);
+    document.querySelectorAll('.tab')[i].classList.toggle('active', t===name);
+  });
+  if (name === 'metricas') renderChart();
+}
+
+init();
+</script>
+</body>
+</html>
