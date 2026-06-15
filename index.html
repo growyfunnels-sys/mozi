@@ -1,104 +1,1184 @@
-// ══════════════════════════════════════════════════════
-//  MOZI GrowyFunnels — Google Apps Script Backend v3
-//  ► Pegá este código en Apps Script
-//  ► Implementar → NUEVA implementación
-//  ► Tipo: Aplicación web
-//  ► Ejecutar como: Yo
-//  ► Acceso: Cualquier persona
-//  ► Copiá la URL nueva y pegala en el dashboard
-// ══════════════════════════════════════════════════════
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOZI — GrowyFunnels</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --bg:#f5f5f3;--surface:#fff;--surface2:#f0efed;
+  --border:rgba(0,0,0,.09);--border2:rgba(0,0,0,.15);
+  --text:#1a1a1a;--text2:#555;--text3:#999;
+  --blue:#185FA5;--blue-light:#E6F1FB;--blue-mid:#B5D4F4;
+  --green:#0F6E56;--green-light:#E1F5EE;
+  --amber:#BA7517;--amber-light:#FAEEDA;--amber-mid:#FAC775;
+  --red:#A32D2D;--red-light:#FCEBEB;
+  --radius:10px;--radius-lg:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
+/* TOPBAR */
+.topbar{background:var(--surface);border-bottom:.5px solid var(--border);padding:0 20px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.topbar-brand{font-size:15px;font-weight:700;color:var(--blue);letter-spacing:-.01em;}
+.topbar-brand span{color:var(--text3);font-weight:400;font-size:12px;margin-left:8px;}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+.tb-btn{background:none;border:.5px solid var(--border2);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;}
+.tb-btn:hover{background:var(--surface2);}
+.notif-wrap{position:relative;}
+.notif-dot{position:absolute;top:3px;right:3px;width:7px;height:7px;border-radius:50%;background:var(--red);display:none;border:1.5px solid #fff;}
+.notif-dot.on{display:block;}
+/* BARRA TIEMPO — sticky bajo topbar */
+.time-rail-wrap{position:sticky;top:54px;z-index:99;background:var(--surface);}
+.time-rail{height:4px;background:var(--surface2);}
+.time-fill{height:100%;transition:width .5s,background .5s;}
+/* NOTIF PANEL */
+.notif-panel{position:fixed;top:68px;right:16px;z-index:250;background:var(--surface);border:.5px solid var(--border2);border-radius:var(--radius-lg);box-shadow:0 8px 30px rgba(0,0,0,.12);width:290px;display:none;}
+.notif-panel.open{display:block;}
+.notif-hdr{padding:12px 14px 8px;font-size:11px;font-weight:600;color:var(--text);border-bottom:.5px solid var(--border);text-transform:uppercase;letter-spacing:.06em;}
+.notif-item{padding:10px 14px;border-top:.5px solid var(--border);font-size:12px;color:var(--text2);line-height:1.5;display:flex;gap:8px;}
+.notif-empty{padding:18px 14px;font-size:12px;color:var(--text3);text-align:center;}
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:400;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border-radius:var(--radius-lg);padding:24px;max-width:580px;width:100%;max-height:92vh;overflow-y:auto;}
+.modal-title{font-size:14px;font-weight:600;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text3);}
+/* TOAST */
+.toast-wrap{position:fixed;bottom:20px;right:16px;z-index:300;display:flex;flex-direction:column;gap:8px;max-width:300px;}
+.toast{background:var(--surface);border:.5px solid var(--border2);border-radius:10px;padding:12px 14px;font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,.12);display:flex;gap:10px;align-items:flex-start;animation:toastIn .3s ease;}
+@keyframes toastIn{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+.toast.red{border-left:3px solid var(--red);}
+.toast.amber{border-left:3px solid var(--amber);}
+.toast.green{border-left:3px solid var(--green);}
+.toast-icon{font-size:16px;flex-shrink:0;}
+.toast-title{font-weight:600;color:var(--text);font-size:12px;margin-bottom:2px;}
+.toast-msg{color:var(--text2);line-height:1.4;}
+.toast-x{background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;margin-left:auto;padding:0 0 0 6px;flex-shrink:0;}
+/* SETUP */
+.setup-overlay{position:fixed;inset:0;background:rgba(245,245,243,.97);z-index:500;display:none;align-items:center;justify-content:center;padding:24px;}
+.setup-overlay.open{display:flex;}
+.setup-card{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius-lg);padding:32px;max-width:520px;width:100%;}
+.setup-card h2{font-size:17px;font-weight:600;margin-bottom:8px;}
+.setup-card p{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:18px;}
+.setup-step{background:var(--surface2);border-radius:8px;padding:12px 14px;margin-bottom:8px;font-size:13px;line-height:1.6;}
+.setup-step strong{color:var(--text);}
+.setup-step code{background:var(--blue-light);color:var(--blue);padding:1px 5px;border-radius:4px;font-family:monospace;font-size:12px;}
+/* LAYOUT */
+.main{max-width:980px;margin:0 auto;padding:18px 14px 60px;}
+/* NORTH STAR */
+.north-star{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px 14px;margin-bottom:4px;}
+.ns-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px;margin-bottom:12px;}
+.ns-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;}
+.ns-value{font-size:21px;font-weight:600;color:var(--blue);}
+.ns-value.neutral{color:var(--text);}
+.ns-value.warn{color:var(--amber);font-size:14px;margin-top:4px;}
+.ns-value.good{color:var(--green);}
+/* BARRAS NS */
+.ns-bars{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.ns-bar-row{}
+.ns-bar-label{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-bottom:3px;}
+.ns-bar-label span:last-child{font-weight:600;color:var(--text);}
+.prog-bg{background:var(--surface2);border-radius:99px;overflow:hidden;}
+.prog-bg.h4{height:4px;}
+.prog-bg.h6{height:6px;}
+.prog-bg.h7{height:7px;}
+.prog-fill{height:100%;border-radius:99px;transition:width .5s,background .5s;}
+.fill-blue{background:var(--blue);}
+.fill-green{background:var(--green);}
+.fill-teal{background:#0F6E56;}
+.fill-amber{background:var(--amber);}
+.fill-red{background:var(--red);}
+/* SEGUIMIENTO BADGE */
+.badge-seg{display:inline-block;font-size:10px;padding:2px 6px;border-radius:99px;font-weight:500;}
+.seg-hoy{background:#d1f5e8;color:#085041;}
+.seg-pasado{background:var(--red-light);color:var(--red);}
+.seg-pronto{background:var(--amber-light);color:#633806;}
+.seg-ok{background:var(--surface2);color:var(--text3);}
+/* TABS */
+.tabs{display:flex;gap:2px;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:18px;}
+.tab{flex:1;text-align:center;padding:7px 4px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;border-radius:7px;border:none;background:none;font-family:inherit;transition:all .15s;}
+.tab.active{background:var(--surface);color:var(--text);border:.5px solid var(--border);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+/* SUBTABS */
+.subtabs{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap;}
+.subtab{background:var(--surface2);border:.5px solid var(--border);border-radius:7px;padding:6px 14px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;font-family:inherit;}
+.subtab.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+.subtab-panel{display:none;}
+.subtab-panel.active{display:block;}
+/* RITUAL TABS */
+.ritual-tabs{display:flex;gap:3px;background:var(--surface2);border-radius:8px;padding:3px;margin-bottom:16px;}
+.rt{flex:1;text-align:center;padding:7px;font-size:11px;font-weight:500;color:var(--text2);cursor:pointer;border-radius:6px;border:none;background:none;font-family:inherit;}
+.rt.active{background:var(--surface);color:var(--text);border:.5px solid var(--border);}
+.rt-panel{display:none;}
+.rt-panel.active{display:block;}
+/* CARD */
+.card{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius-lg);padding:18px;margin-bottom:14px;}
+.card-title{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px;}
+/* FUNNEL */
+.funnel-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:16px;}
+.funnel-stage{flex:1;min-width:55px;text-align:center;background:var(--surface2);border-radius:8px;padding:9px 4px;}
+.funnel-n{font-size:20px;font-weight:600;}
+.funnel-lbl{font-size:10px;color:var(--text3);margin-top:2px;}
+/* TABLE */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;padding:0 8px 8px;}
+td{padding:9px 8px;border-top:.5px solid var(--border);color:var(--text);vertical-align:middle;}
+tr:hover td{background:var(--surface2);}
+.badge{display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:99px;}
+.b-Prospecto,.b-Contactado{background:var(--blue-light);color:#0C447C;}
+.b-Conversacion{background:var(--amber-light);color:#633806;}
+.b-Reunion{background:#EAF3DE;color:#27500A;}
+.b-Propuesta{background:var(--green-light);color:#085041;}
+.b-Cliente{background:#d1f5e8;color:#085041;font-weight:600;}
+.b-SinInteres{background:var(--red-light);color:var(--red);}
+.btn-edit{background:none;border:.5px solid var(--border);border-radius:5px;padding:3px 7px;font-size:10px;color:var(--blue);cursor:pointer;font-family:inherit;}
+.btn-edit:hover{background:var(--blue-light);}
+.btn-del{background:none;border:.5px solid var(--border);border-radius:5px;padding:3px 7px;font-size:10px;color:var(--text3);cursor:pointer;font-family:inherit;}
+.btn-del:hover{border-color:var(--red);color:var(--red);}
+/* METRIC GRID */
+.mg4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
+@media(max-width:600px){.mg4{grid-template-columns:repeat(2,1fr);}}
+.mi{background:var(--surface2);border-radius:8px;padding:11px 13px;}
+.mi-lbl{font-size:10px;color:var(--text3);margin-bottom:3px;}
+.mi-val{font-size:19px;font-weight:600;color:var(--text);}
+.mi-val.accent{color:var(--blue);}
+/* CHART */
+.chart-wrap{position:relative;width:100%;height:190px;margin-top:12px;}
+.chart-wrap-lg{position:relative;width:100%;height:230px;margin-top:12px;}
+/* RITUAL */
+.ritual-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-top:.5px solid var(--border);}
+.ritual-check{width:15px;height:15px;accent-color:var(--blue);flex-shrink:0;margin-top:3px;cursor:pointer;}
+.ritual-lbl{font-size:13px;color:var(--text);cursor:pointer;font-weight:500;}
+.ritual-lbl.done{text-decoration:line-through;color:var(--text3);}
+.ritual-sub{font-size:11px;color:var(--text3);margin-top:3px;line-height:1.4;}
+/* FORMS */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px;}
+@media(max-width:480px){.form-grid{grid-template-columns:1fr;}}
+.fl{font-size:11px;font-weight:500;color:var(--text2);display:block;margin-bottom:3px;}
+input,select,textarea{width:100%;padding:8px 10px;font-size:13px;border-radius:8px;border:.5px solid var(--border2);background:var(--surface);color:var(--text);font-family:inherit;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);}
+input[type=date]{padding:7px 10px;}
+.btn{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;width:100%;transition:background .15s;}
+.btn:hover{background:#0C447C;}
+.btn-ghost{background:none;border:.5px solid var(--border2);border-radius:8px;padding:8px 14px;font-size:12px;color:var(--text2);cursor:pointer;font-family:inherit;}
+.btn-ghost:hover{background:var(--surface2);}
+.btn-sm{background:var(--blue);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;}
+.nuevo-wrap{display:none;margin-top:6px;}
+.nuevo-wrap.show{display:flex;gap:6px;}
+/* ALERT BOX */
+.alert-box{border-radius:8px;padding:11px 14px;font-size:12px;line-height:1.5;margin-bottom:12px;}
+.ab-info{background:var(--blue-light);color:#0C447C;border:.5px solid var(--blue-mid);}
+.ab-warn{background:var(--amber-light);color:#633806;border:.5px solid var(--amber-mid);}
+.ab-green{background:var(--green-light);color:#085041;border:.5px solid #9FE1CB;}
+.ab-red{background:var(--red-light);color:var(--red);border:.5px solid #F5BFBF;}
+/* PROG COMPARATIVO */
+.prog-double{margin-bottom:12px;}
+.prog-double-hdr{display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;}
+.prog-double-hdr .lbl{color:var(--text2);}
+.prog-stack{display:flex;flex-direction:column;gap:3px;}
+.prog-stack .prog-bg{height:5px;}
+.prog-legend{display:flex;gap:12px;font-size:10px;color:var(--text3);margin-top:4px;}
+.prog-legend span{display:flex;align-items:center;gap:4px;}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+/* STATUS */
+.status-bar{font-size:11px;color:var(--text3);text-align:right;margin-bottom:6px;min-height:15px;}
+.status-bar.saving{color:var(--amber);}
+.status-bar.saved{color:var(--green);}
+/* INSIGHT */
+.insight{background:var(--surface2);border-radius:8px;padding:11px 14px;font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:8px;border-left:3px solid var(--blue);}
+.insight.warn{border-color:var(--amber);}
+.insight.red{border-color:var(--red);}
+.insight.green{border-color:var(--green);}
+/* EMPTY */
+.empty{text-align:center;padding:28px;color:var(--text3);font-size:12px;}
+.divider{border:none;border-top:.5px solid var(--border);margin:14px 0;}
+.section-gap{margin-bottom:16px;}
+.grid-2-chart{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:600px){.grid-2-chart{grid-template-columns:1fr;}}
+.seg-table td,.seg-table th{font-size:11px;padding:7px 6px;}
+/* PROG ROW */
+.prog-row{margin-bottom:11px;}
+.prog-header{display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;}
+.prog-label{color:var(--text2);}
+.prog-pct{font-weight:600;color:var(--text);}
+/* CLIENTES CARD */
+.cliente-card{background:var(--surface2);border-radius:10px;padding:14px;margin-bottom:10px;border-left:3px solid var(--green);}
+.cliente-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.cliente-nombre{font-size:14px;font-weight:600;color:var(--text);}
+.cliente-valor{font-size:13px;font-weight:600;color:var(--green);}
+.cliente-meta{font-size:11px;color:var(--text3);margin-bottom:8px;}
+.cliente-acciones{display:flex;gap:6px;}
+</style>
+</head>
+<body>
 
-const SHEET_NAME = 'mozi_data';
+<!-- SETUP -->
+<div class="setup-overlay" id="setup-overlay">
+  <div class="setup-card">
+    <h2>Configuración inicial — MOZI</h2>
+    <p>Conectá Google Sheets como backend. Son 3 pasos, menos de 5 minutos.</p>
+    <div class="setup-step"><strong>Paso 1.</strong> Entrá a <a href="https://sheets.new" target="_blank" style="color:var(--blue)">sheets.new</a>, creá una planilla y llamala <code>MOZI GrowyFunnels</code>.</div>
+    <div class="setup-step"><strong>Paso 2.</strong> En la planilla → <strong>Extensiones → Apps Script</strong> → borrá todo → pegá el archivo <code>apps-script.gs</code> → Guardar → <strong>Implementar → Nueva implementación</strong> → Aplicación web → Cualquier persona → Implementar. Copiá la URL.</div>
+    <div class="setup-step"><strong>Paso 3.</strong> Pegá esa URL acá abajo.</div>
+    <div style="margin:16px 0 20px">
+      <label class="fl">URL de tu Apps Script</label>
+      <input type="url" id="setup-url" placeholder="https://script.google.com/macros/s/...../exec">
+    </div>
+    <button class="btn" onclick="guardarConfig()">Guardar y abrir MOZI</button>
+  </div>
+</div>
 
-function getSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName(SHEET_NAME);
-  if (!sheet) {
-    sheet = ss.insertSheet(SHEET_NAME);
-    sheet.getRange(1, 1).setValue('json_data');
-    sheet.getRange(2, 1).setValue(JSON.stringify({
-      prospectos: [], facturacionReal: 0, nextId: 1,
-      rubrosExtra: [], ciudadesExtra: []
-    }));
-  }
-  return sheet;
+<!-- NOTIF PANEL -->
+<div class="notif-panel" id="notif-panel">
+  <div class="notif-hdr">Alertas activas</div>
+  <div id="notif-list"><div class="notif-empty">Sin alertas por ahora 👌</div></div>
+</div>
+
+<!-- MODAL EDICIÓN PROSPECTO -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-title">Editar prospecto <button class="modal-close" onclick="cerrarModal()">✕</button></div>
+    <div class="form-grid">
+      <div><label class="fl">Negocio *</label><input type="text" id="e-neg"></div>
+      <div><label class="fl">Contacto</label><input type="text" id="e-con"></div>
+    </div>
+    <div class="form-grid">
+      <div><label class="fl">Rubro</label><select id="e-rub"></select></div>
+      <div><label class="fl">Ciudad</label><select id="e-ciu"></select></div>
+    </div>
+    <div class="form-grid">
+      <div><label class="fl">Estado *</label>
+        <select id="e-est">
+          <option value="Prospecto">Prospecto</option><option value="Contactado">Contactado</option>
+          <option value="Conversacion">Conversación</option><option value="Reunion">Reunión</option>
+          <option value="Propuesta">Propuesta</option><option value="Cliente">Cliente</option>
+          <option value="Sin Interes">Sin interés</option>
+        </select>
+      </div>
+      <div><label class="fl">Valor potencial (USD)</label><input type="number" id="e-val" min="0"></div>
+    </div>
+    <div class="form-grid">
+      <div><label class="fl">Próxima acción</label><input type="text" id="e-acc" placeholder="Ej: Llamar el martes"></div>
+      <div><label class="fl">Fecha de seguimiento</label><input type="date" id="e-seg"></div>
+    </div>
+    <div style="margin-bottom:16px">
+      <label class="fl">WhatsApp / Teléfono</label>
+      <input type="text" id="e-tel" placeholder="+5491123456789">
+    </div>
+    <div style="margin-bottom:16px">
+      <label class="fl">Notas internas</label>
+      <textarea id="e-notas" rows="3" placeholder="Observaciones, contexto, objeciones..."></textarea>
+    </div>
+    <div style="margin-bottom:16px">
+      <label class="fl">Facturación mensual real (USD) — solo si es Cliente</label>
+      <input type="number" id="e-fac" placeholder="Ej: 300" min="0">
+    </div>
+    <button class="btn" onclick="guardarEdicion()">Guardar cambios</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">MOZI <span>GrowyFunnels</span></div>
+  <div class="topbar-right">
+    <div class="notif-wrap">
+      <button class="tb-btn" onclick="toggleNotif()" id="notif-btn">🔔 Alertas</button>
+      <div class="notif-dot" id="notif-dot"></div>
+    </div>
+    <button class="tb-btn" onclick="sincronizar()" id="sync-btn">↻ Sincronizar</button>
+    <button class="tb-btn" onclick="resetURL()" style="color:var(--text3);font-size:11px">⚙ URL</button>
+  </div>
+</div>
+
+<!-- BARRA TIEMPO -->
+<div class="time-rail-wrap">
+  <div class="time-rail"><div class="time-fill" id="time-fill"></div></div>
+</div>
+
+<div class="main">
+<div class="status-bar" id="status-bar"></div>
+
+<!-- NORTH STAR -->
+<div class="north-star">
+  <div class="ns-grid">
+    <div><div class="ns-label">Facturación / meta</div><div class="ns-value" id="ns-fact">USD 0 / 5.000</div></div>
+    <div><div class="ns-label">Clientes activos</div><div class="ns-value" id="ns-cli">0 / 15</div></div>
+    <div><div class="ns-label">Días restantes</div><div class="ns-value neutral" id="ns-dias">181</div></div>
+    <div><div class="ns-label">Ritmo necesario</div><div class="ns-value warn" id="ns-ritmo">—</div></div>
+  </div>
+  <div class="ns-bars">
+    <div class="ns-bar-row">
+      <div class="ns-bar-label"><span>Tiempo transcurrido</span><span id="ns-tiempo-pct">0%</span></div>
+      <div class="prog-bg h4"><div class="prog-fill" id="ns-tiempo-bar" style="width:0%"></div></div>
+    </div>
+    <div class="ns-bar-row">
+      <div class="ns-bar-label"><span>Facturación lograda</span><span id="ns-fact-pct">0%</span></div>
+      <div class="prog-bg h4"><div class="prog-fill fill-blue" id="ns-fact-bar" style="width:0%"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div style="margin-top:16px">
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('pipeline')">Pipeline</button>
+  <button class="tab" onclick="switchTab('vision')">Visión</button>
+  <button class="tab" onclick="switchTab('clientes')">Clientes</button>
+  <button class="tab" onclick="switchTab('seguimiento')">Seguimiento</button>
+  <button class="tab" onclick="switchTab('rituales')">Rituales</button>
+  <button class="tab" onclick="switchTab('cargar')">+ Cargar</button>
+</div>
+
+<!-- ══ TAB PIPELINE ══ -->
+<div id="tab-pipeline" class="tab-panel active">
+  <div class="funnel-row" id="funnel"></div>
+  <div class="card">
+    <div class="card-title">Prospectos activos</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th style="width:22%">Negocio</th>
+          <th style="width:12%">Rubro</th>
+          <th style="width:14%">Estado</th>
+          <th style="width:10%">Valor pot.</th>
+          <th style="width:18%">Próx. acción</th>
+          <th style="width:10%">Seguimiento</th>
+          <th style="width:14%"></th>
+        </tr></thead>
+        <tbody id="pipeline-body"></tbody>
+      </table>
+    </div>
+    <div id="pipeline-empty" class="empty" style="display:none">Sin prospectos activos todavía. Usá "+ Cargar".</div>
+  </div>
+</div>
+
+<!-- ══ TAB VISIÓN ══ -->
+<div id="tab-vision" class="tab-panel">
+  <div class="subtabs">
+    <button class="subtab active" onclick="switchSubtab('general')">General</button>
+    <button class="subtab" onclick="switchSubtab('pipeline-vis')">Pipeline</button>
+    <button class="subtab" onclick="switchSubtab('rubros-vis')">Por rubro</button>
+    <button class="subtab" onclick="switchSubtab('ciudades-vis')">Por ciudad</button>
+  </div>
+
+  <!-- GENERAL -->
+  <div id="sub-general" class="subtab-panel active">
+    <div class="mg4">
+      <div class="mi"><div class="mi-lbl">Total pipeline</div><div class="mi-val" id="m-total">0</div></div>
+      <div class="mi"><div class="mi-lbl">En negociación</div><div class="mi-val accent" id="m-neg">0</div></div>
+      <div class="mi"><div class="mi-lbl">Propuestas</div><div class="mi-val" id="m-prop">0</div></div>
+      <div class="mi"><div class="mi-lbl">Tasa de cierre</div><div class="mi-val" id="m-cierre">0%</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Progreso hacia la meta</div>
+      <div class="prog-row">
+        <div class="prog-header"><span class="prog-label">Facturación mensual</span><span class="prog-pct" id="pct-f">0%</span></div>
+        <div class="prog-bg h7"><div class="prog-fill fill-blue" id="bar-f" style="width:0%"></div></div>
+      </div>
+      <div class="prog-row">
+        <div class="prog-header"><span class="prog-label">Clientes activos (0/15)</span><span class="prog-pct" id="pct-c">0%</span></div>
+        <div class="prog-bg h7"><div class="prog-fill fill-green" id="bar-c" style="width:0%"></div></div>
+      </div>
+      <div class="prog-row">
+        <div class="prog-header"><span class="prog-label">Pipeline value vs 3x meta</span><span class="prog-pct" id="pct-p">0%</span></div>
+        <div class="prog-bg h7"><div class="prog-fill fill-teal" id="bar-p" style="width:0%"></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Proyección e insights</div>
+      <div id="insights-general"></div>
+    </div>
+  </div>
+
+  <!-- PIPELINE VIS -->
+  <div id="sub-pipeline-vis" class="subtab-panel">
+    <div class="card">
+      <div class="card-title">Distribución por etapa</div>
+      <div class="chart-wrap"><canvas id="chartEtapas" role="img" aria-label="Distribución por etapa"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Potencial vs Real — comparativo por etapa (USD)</div>
+      <div id="pipeline-comparativo"></div>
+      <div class="prog-legend" style="margin-top:8px">
+        <span><i class="dot" style="background:var(--blue)"></i>Valor potencial</span>
+        <span><i class="dot" style="background:var(--green)"></i>Facturación real</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Valor potencial total por etapa (USD)</div>
+      <div class="chart-wrap"><canvas id="chartValorEtapa" role="img" aria-label="Valor por etapa"></canvas></div>
+    </div>
+  </div>
+
+  <!-- RUBROS VIS -->
+  <div id="sub-rubros-vis" class="subtab-panel">
+    <div class="grid-2-chart">
+      <div class="card">
+        <div class="card-title">Prospectos por rubro</div>
+        <div class="chart-wrap"><canvas id="chartRubros" role="img" aria-label="Prospectos por rubro"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Valor potencial por rubro (USD)</div>
+        <div class="chart-wrap"><canvas id="chartRubrosValor" role="img" aria-label="Valor por rubro"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Detalle por rubro</div>
+      <div id="tabla-rubros"></div>
+    </div>
+  </div>
+
+  <!-- CIUDADES VIS -->
+  <div id="sub-ciudades-vis" class="subtab-panel">
+    <div class="grid-2-chart">
+      <div class="card">
+        <div class="card-title">Prospectos por ciudad</div>
+        <div class="chart-wrap"><canvas id="chartCiudades" role="img" aria-label="Por ciudad"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Clientes por ciudad</div>
+        <div class="chart-wrap"><canvas id="chartCiudadesClientes" role="img" aria-label="Clientes por ciudad"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB CLIENTES ══ -->
+<div id="tab-clientes" class="tab-panel">
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title">Resumen de facturación real</div>
+    <div class="mg4" style="margin-bottom:8px">
+      <div class="mi"><div class="mi-lbl">Clientes activos</div><div class="mi-val accent" id="cl-n">0</div></div>
+      <div class="mi"><div class="mi-lbl">Facturación total</div><div class="mi-val" id="cl-total">USD 0</div></div>
+      <div class="mi"><div class="mi-lbl">Ticket promedio</div><div class="mi-val" id="cl-avg">USD 0</div></div>
+      <div class="mi"><div class="mi-lbl">Falta para meta</div><div class="mi-val" id="cl-falta" style="color:var(--amber)">USD 5.000</div></div>
+    </div>
+    <div class="prog-row">
+      <div class="prog-header"><span class="prog-label">Facturación real vs meta USD 5.000</span><span class="prog-pct" id="cl-pct">0%</span></div>
+      <div class="prog-bg h7"><div class="prog-fill fill-blue" id="cl-bar" style="width:0%"></div></div>
+    </div>
+  </div>
+  <div id="clientes-list"><div class="empty">Sin clientes todavía. Cuando agregues un prospecto en estado "Cliente" aparece acá.</div></div>
+</div>
+
+<!-- ══ TAB SEGUIMIENTO ══ -->
+<div id="tab-seguimiento" class="tab-panel">
+  <div class="card">
+    <div class="card-title">Acciones programadas</div>
+    <div class="table-wrap">
+      <table class="seg-table">
+        <thead><tr>
+          <th style="width:22%">Negocio</th>
+          <th style="width:14%">Estado</th>
+          <th style="width:20%">Acción</th>
+          <th style="width:12%">Fecha</th>
+          <th style="width:10%">Prioridad</th>
+          <th style="width:22%"></th>
+        </tr></thead>
+        <tbody id="seg-body"></tbody>
+      </table>
+    </div>
+    <div id="seg-empty" class="empty" style="display:none">Sin seguimientos programados. Asigná fechas al cargar o editar un prospecto.</div>
+  </div>
+</div>
+
+<!-- ══ TAB RITUALES ══ -->
+<div id="tab-rituales" class="tab-panel">
+  <div class="ritual-tabs">
+    <button class="rt active" onclick="switchRitualTab('diario')">📋 Arranque diario</button>
+    <button class="rt" onclick="switchRitualTab('inicio')">🚀 Inicio de semana</button>
+    <button class="rt" onclick="switchRitualTab('cierre')">📊 Cierre de semana</button>
+  </div>
+  <div id="rp-diario" class="rt-panel active"></div>
+  <div id="rp-inicio" class="rt-panel"></div>
+  <div id="rp-cierre" class="rt-panel"></div>
+</div>
+
+<!-- ══ TAB CARGAR ══ -->
+<div id="tab-cargar" class="tab-panel">
+  <div class="card section-gap">
+    <div class="card-title">Nuevo prospecto</div>
+    <div class="form-grid">
+      <div><label class="fl">Negocio *</label><input type="text" id="f-neg" placeholder="Ej: Ferretería El Clavo"></div>
+      <div><label class="fl">Contacto</label><input type="text" id="f-con" placeholder="Nombre del dueño"></div>
+    </div>
+    <div class="form-grid">
+      <div>
+        <label class="fl">Rubro</label>
+        <select id="f-rub" onchange="onSelectChange('rub')"></select>
+        <div class="nuevo-wrap" id="nuevo-rub-wrap">
+          <input type="text" id="nuevo-rub-input" placeholder="Nombre del rubro nuevo" style="flex:1">
+          <button class="btn-sm" onclick="agregarNuevo('rub')">+ Agregar</button>
+        </div>
+      </div>
+      <div>
+        <label class="fl">Ciudad</label>
+        <select id="f-ciu" onchange="onSelectChange('ciu')"></select>
+        <div class="nuevo-wrap" id="nuevo-ciu-wrap">
+          <input type="text" id="nuevo-ciu-input" placeholder="Nombre de la ciudad" style="flex:1">
+          <button class="btn-sm" onclick="agregarNuevo('ciu')">+ Agregar</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-grid">
+      <div>
+        <label class="fl">Estado *</label>
+        <select id="f-est">
+          <option value="Prospecto">Prospecto</option><option value="Contactado">Contactado</option>
+          <option value="Conversacion">Conversación</option><option value="Reunion">Reunión</option>
+          <option value="Propuesta">Propuesta</option><option value="Cliente">Cliente</option>
+          <option value="Sin Interes">Sin interés</option>
+        </select>
+      </div>
+      <div><label class="fl">Valor potencial (USD)</label><input type="number" id="f-val" placeholder="Ej: 350" min="0"></div>
+    </div>
+    <div class="form-grid">
+      <div><label class="fl">WhatsApp / Teléfono</label><input type="text" id="f-tel" placeholder="+5491123456789"></div>
+      <div><label class="fl">Fecha de seguimiento</label><input type="date" id="f-seg"></div>
+    </div>
+    <div style="margin-bottom:9px"><label class="fl">Próxima acción</label><input type="text" id="f-acc" placeholder="Ej: Llamar martes para confirmar reunión"></div>
+    <div style="margin-bottom:9px"><label class="fl">Notas internas</label><textarea id="f-notas" rows="2" placeholder="Contexto, objeciones, referencias..."></textarea></div>
+    <div style="margin-bottom:14px"><label class="fl">Facturación mensual real (USD) — solo si es Cliente</label><input type="number" id="f-fac" placeholder="Ej: 300" min="0"></div>
+    <button class="btn" onclick="agregarProspecto()">+ Agregar al pipeline</button>
+  </div>
+
+  <div class="card section-gap">
+    <div class="card-title">Actualizar facturación total real del mes</div>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:10px">Ingresá el total facturado este mes (suma de todos los clientes activos).</p>
+    <div style="display:flex;gap:8px">
+      <input type="number" id="f-totfac" placeholder="Total USD este mes" style="flex:1" min="0">
+      <button class="btn" style="width:auto;white-space:nowrap" onclick="setFacturacion()">Guardar</button>
+    </div>
+  </div>
+
+  <div class="card section-gap">
+    <div class="card-title">Gestionar listas personalizadas</div>
+    <div id="listas-custom"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" style="color:var(--red)">Zona de reseteo</div>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:10px">Borrá todos los datos. No se puede deshacer.</p>
+    <button class="btn-ghost" onclick="confirmarReset()" style="border-color:var(--red);color:var(--red)">Borrar todos los datos</button>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div>
+
+<script>
+// ════ CONSTANTES ════
+const META_USD=5000, META_CLI=15;
+const START_DATE=new Date('2026-06-13');
+const DIAS_OBJ=181;
+const LS_URL='mozi_script_url';
+const LS_DATA='mozi_data_v4';
+const LS_RIT='mozi_rituales_v2';
+
+const RUBROS_BASE=['Inmobiliaria','Estetica','Restaurante','Gimnasio','Kiosco','Carniceria','Ferreteria','Perfumeria','Calzados','Tienda de Ropa','Estudio Jurídico'];
+const CIUDADES_BASE=['San Pedro','Baradero'];
+
+const RITUALES_DIARIO=[
+  {t:'Abrí MOZI y revisé el North Star',s:'¿Cuánto falta para USD 5.000? ¿Cuántos días quedan?'},
+  {t:'Revisé el Pipeline completo',s:'¿Hay algún prospecto sin movimiento hace más de 7 días?'},
+  {t:'Revisé los seguimientos de hoy',s:'Chequeá la pestaña Seguimiento — ninguna acción programada puede quedar sin ejecutar'},
+  {t:'Definí mi Misión 3-2-1',s:'3 tareas DINERO · 2 OPERACIÓN · 1 CRECIMIENTO. Escribilas antes de empezar'},
+  {t:'Ejecuté la primera tarea crítica antes de abrir redes',s:'La primera hora del día es para el negocio, no para el scroll'},
+  {t:'Registré en MOZI todos los movimientos del día anterior',s:'Un pipeline actualizado es un pipeline que trabaja para vos'},
+];
+
+const RITUALES_INICIO=[
+  {t:'Revisá el North Star y calculá la brecha real',s:'USD 5.000 − facturación actual = brecha. ¿Cuántos clientes nuevos necesitás ESTA semana para acortar esa brecha?'},
+  {t:'Auditá el pipeline completo prospecto por prospecto',s:'Prospecto sin contacto en +7 días → movilizalo o marcalo Sin interés. No dejes fantasmas en el pipeline'},
+  {t:'Identificá tus 3 prospectos más calientes de la semana',s:'Los más cercanos a cerrar merecen tu energía número uno. Escribí sus nombres ahora'},
+  {t:'Definí tu objetivo de actividad semanal',s:'Mínimo: 5 contactos nuevos + 2 reuniones + 1 propuesta. Si la semana pasada no los cumpliste, doblá el esfuerzo'},
+  {t:'Bloqueá en tu agenda los bloques de prospección',s:'Si no está en la agenda, no existe. Mínimo 90 min/día para tareas DINERO antes de cualquier otra cosa'},
+  {t:'Revisá todos los seguimientos de la semana',s:'Todo prospecto con fecha de seguimiento esta semana debe tener una acción clara asignada'},
+  {t:'Decidí qué oferta o propuesta enviás esta semana',s:'¿A quién? ¿Cuándo? ¿Tenés todo listo para cerrar? Sin propuesta no hay cierre'},
+];
+
+const RITUALES_CIERRE=[
+  {t:'Contá los contactos nuevos que hiciste esta semana',s:'Meta mínima: 5 contactos. ¿La cumpliste? Si no: ¿fue tiempo, energía, oferta o miedo?'},
+  {t:'Contá las reuniones realizadas',s:'Meta: 2 reuniones. Cada reunión es una posibilidad real de cierre'},
+  {t:'¿Cuántas propuestas enviaste esta semana?',s:'Sin propuesta no hay cierre. Si mandaste 0, es la prioridad número uno de la semana que viene'},
+  {t:'Revisá si cerraste algún cliente esta semana',s:'Actualizá el estado en MOZI y la facturación real si corresponde. Celebrá el avance'},
+  {t:'Identificá el obstáculo concreto que frenó tu avance',s:'1 obstáculo real, no excusas. ¿Fue tiempo, energía, claridad en la oferta o miedo al rechazo?'},
+  {t:'Definí el ajuste para la próxima semana',s:'1 cosa diferente que vas a hacer la semana que viene para acercarte más a los USD 5.000'},
+  {t:'Actualizá MOZI con todos los movimientos de la semana',s:'Pipeline limpio = arranque de la semana que viene con claridad total y sin fricción'},
+];
+
+// ════ STATE ════
+let state={prospectos:[],facturacionReal:0,nextId:1,rubrosExtra:[],ciudadesExtra:[]};
+let scriptURL='', charts={}, currentSubtab='general', editingId=null, notifOpen=false, notifList=[];
+let ritualesEstado={};
+
+// ════ INIT ════
+function init(){
+  scriptURL=localStorage.getItem(LS_URL)||'';
+  if(!scriptURL){document.getElementById('setup-overlay').classList.add('open');return;}
+  cargarLocal(); cargarRituales(); poblarSelects(); renderListasCustom();
+  actualizarTodo(); calcularNotificaciones(); sincronizar();
 }
 
-// ── GET: lectura (JSONP) y escritura por query param ──
-function doGet(e) {
-  const params   = e && e.parameter ? e.parameter : {};
-  const action   = params.action   || 'get';
-  const callback = params.callback || null;
-  const dataParam = params.data    || null;
+function guardarConfig(){
+  const url=document.getElementById('setup-url').value.trim();
+  if(!url.startsWith('https://script.google.com')){alert('URL inválida.');return;}
+  localStorage.setItem(LS_URL,url); scriptURL=url;
+  document.getElementById('setup-overlay').classList.remove('open');
+  sincronizar();
+}
+function resetURL(){localStorage.removeItem(LS_URL);location.reload();}
 
-  let result;
-  if (action === 'set' && dataParam) {
-    result = setData(dataParam);
-  } else {
-    result = readData();
-  }
+// ════ LOCAL STORAGE ════
+function cargarLocal(){
+  try{const r=localStorage.getItem(LS_DATA);if(r)state=JSON.parse(r);}catch(e){}
+  if(!state.rubrosExtra)state.rubrosExtra=[];
+  if(!state.ciudadesExtra)state.ciudadesExtra=[];
+}
+function guardarLocal(){localStorage.setItem(LS_DATA,JSON.stringify(state));}
 
-  if (callback) {
-    return ContentService
-      .createTextOutput(callback + '(' + JSON.stringify(result) + ');')
-      .setMimeType(ContentService.MimeType.JAVASCRIPT);
-  }
-  return ContentService
-    .createTextOutput(JSON.stringify(result))
-    .setMimeType(ContentService.MimeType.JSON);
+function cargarRituales(){
+  try{
+    const hoy=new Date().toISOString().slice(0,10);
+    const r=localStorage.getItem(LS_RIT);
+    if(r){const p=JSON.parse(r);if(p.fecha===hoy)ritualesEstado=p.estados||{};}
+  }catch(e){}
+}
+function guardarRitualesLocal(){
+  const hoy=new Date().toISOString().slice(0,10);
+  localStorage.setItem(LS_RIT,JSON.stringify({fecha:hoy,estados:ritualesEstado}));
 }
 
-// ── POST: escritura desde iframe/form ─────────────────
-function doPost(e) {
-  try {
-    let dataStr = null;
-    // Puede venir como form field o como JSON body
-    if (e.parameter && e.parameter.data) {
-      dataStr = e.parameter.data;
-    } else if (e.postData && e.postData.contents) {
-      const body = JSON.parse(e.postData.contents);
-      dataStr = typeof body.data === 'string' ? body.data : JSON.stringify(body.data);
-    }
-    if (!dataStr) return buildResponse({ error: 'Sin datos' });
-    const result = setData(dataStr);
-    return buildResponse(result);
-  } catch(err) {
-    return buildResponse({ error: err.toString() });
+// ════ SELECTORES DINÁMICOS ════
+function todosRubros(){return [...RUBROS_BASE,...(state.rubrosExtra||[])];}
+function todasCiudades(){return [...CIUDADES_BASE,...(state.ciudadesExtra||[])];}
+
+function poblarSelects(){
+  const rubros=todosRubros(), ciudades=todasCiudades();
+  ['f-rub','e-rub'].forEach(id=>{
+    const s=document.getElementById(id); if(!s)return;
+    const v=s.value;
+    s.innerHTML='<option value="">— Seleccioná —</option>'+rubros.map(r=>`<option value="${r}">${r}</option>`).join('')+'<option value="__nuevo__">+ Agregar rubro nuevo...</option>';
+    if(v)s.value=v;
+  });
+  ['f-ciu','e-ciu'].forEach(id=>{
+    const s=document.getElementById(id); if(!s)return;
+    const v=s.value;
+    s.innerHTML=ciudades.map(c=>`<option value="${c}">${c}</option>`).join('')+'<option value="__nuevo__">+ Agregar ciudad nueva...</option>';
+    if(v)s.value=v;
+  });
+}
+
+function onSelectChange(tipo){
+  const selId=tipo==='rub'?'f-rub':'f-ciu';
+  const wrapId=tipo==='rub'?'nuevo-rub-wrap':'nuevo-ciu-wrap';
+  const sel=document.getElementById(selId);
+  const wrap=document.getElementById(wrapId);
+  if(sel.value==='__nuevo__'){wrap.classList.add('show');wrap.querySelector('input').focus();}
+  else{wrap.classList.remove('show');}
+}
+
+async function agregarNuevo(tipo){
+  const inputId=tipo==='rub'?'nuevo-rub-input':'nuevo-ciu-input';
+  const val=document.getElementById(inputId).value.trim();
+  if(!val)return;
+  if(tipo==='rub'){if(!state.rubrosExtra)state.rubrosExtra=[];if(!state.rubrosExtra.includes(val))state.rubrosExtra.push(val);}
+  else{if(!state.ciudadesExtra)state.ciudadesExtra=[];if(!state.ciudadesExtra.includes(val))state.ciudadesExtra.push(val);}
+  document.getElementById(inputId).value='';
+  poblarSelects(); renderListasCustom();
+  const selId=tipo==='rub'?'f-rub':'f-ciu';
+  document.getElementById(selId).value=val;
+  document.getElementById(tipo==='rub'?'nuevo-rub-wrap':'nuevo-ciu-wrap').classList.remove('show');
+  guardarLocal(); await enviarASheets({action:'set',data:state});
+  toast('Agregado','Nueva opción guardada en tus listas','green');
+}
+
+function renderListasCustom(){
+  const el=document.getElementById('listas-custom'); if(!el)return;
+  const rubros=state.rubrosExtra||[], ciudades=state.ciudadesExtra||[];
+  let h='';
+  if(rubros.length){
+    h+='<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Rubros personalizados</div>';
+    h+=rubros.map((r,i)=>`<span style="display:inline-flex;align-items:center;gap:4px;background:var(--surface2);border-radius:99px;padding:3px 10px;font-size:12px;margin:0 4px 4px 0">${r} <button onclick="eliminarLista('rub',${i})" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px;padding:0">✕</button></span>`).join('');
+  }
+  if(ciudades.length){
+    h+='<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px">Ciudades personalizadas</div>';
+    h+=ciudades.map((c,i)=>`<span style="display:inline-flex;align-items:center;gap:4px;background:var(--surface2);border-radius:99px;padding:3px 10px;font-size:12px;margin:0 4px 4px 0">${c} <button onclick="eliminarLista('ciu',${i})" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px;padding:0">✕</button></span>`).join('');
+  }
+  el.innerHTML=h||'<p style="font-size:12px;color:var(--text3)">No hay opciones personalizadas todavía.</p>';
+}
+
+async function eliminarLista(tipo,i){
+  if(tipo==='rub')state.rubrosExtra.splice(i,1);
+  else state.ciudadesExtra.splice(i,1);
+  poblarSelects(); renderListasCustom(); guardarLocal();
+  await enviarASheets({action:'set',data:state});
+}
+
+// ════ NORTH STAR ════
+function diasRestantes(){
+  const fin=new Date(START_DATE); fin.setDate(fin.getDate()+DIAS_OBJ);
+  return Math.max(0,Math.ceil((fin-new Date())/86400000));
+}
+function diasTranscurridos(){return Math.min(DIAS_OBJ,DIAS_OBJ-diasRestantes());}
+
+function actualizarNorthStar(){
+  const dias=diasRestantes(), trans=diasTranscurridos();
+  const tiempoPct=Math.round((trans/DIAS_OBJ)*100);
+  const fact=state.facturacionReal||0;
+  const cli=state.prospectos.filter(p=>p.estado==='Cliente').length;
+  const factPct=Math.min(100,Math.round((fact/META_USD)*100));
+  const cliPct=Math.min(100,Math.round((cli/META_CLI)*100));
+
+  document.getElementById('ns-fact').textContent=`USD ${fact.toLocaleString()} / ${META_USD.toLocaleString()}`;
+  document.getElementById('ns-cli').textContent=`${cli} / ${META_CLI}`;
+  document.getElementById('ns-dias').textContent=dias;
+
+  // Barra tiempo — verde→amarillo→rojo
+  const fill=document.getElementById('time-fill');
+  fill.style.width=tiempoPct+'%';
+  fill.style.background=tiempoPct<50?'#0F6E56':tiempoPct<75?'#BA7517':'#A32D2D';
+
+  // Barra tiempo NS
+  const ntb=document.getElementById('ns-tiempo-bar');
+  ntb.style.width=tiempoPct+'%';
+  ntb.style.background=tiempoPct<50?'#0F6E56':tiempoPct<75?'#BA7517':'#A32D2D';
+  document.getElementById('ns-tiempo-pct').textContent=tiempoPct+'%';
+
+  // Barra facturación NS — color segun avance vs tiempo
+  const nfb=document.getElementById('ns-fact-bar');
+  nfb.style.width=factPct+'%';
+  nfb.style.background=factPct>=tiempoPct?'#0F6E56':factPct>tiempoPct*.6?'#BA7517':'#A32D2D';
+  document.getElementById('ns-fact-pct').textContent=factPct+'%';
+
+  const falta=META_USD-fact;
+  const sem=Math.ceil(dias/7);
+  const rEl=document.getElementById('ns-ritmo');
+  if(falta<=0){rEl.textContent='Meta alcanzada 🎉';rEl.className='ns-value good';}
+  else if(sem>0){rEl.textContent=`USD ${Math.ceil(falta/sem).toLocaleString()}/sem`;rEl.className='ns-value warn';}
+
+  // Métricas generales
+  const activos=state.prospectos.filter(p=>p.estado!=='Sin Interes');
+  const neg=state.prospectos.filter(p=>['Conversacion','Reunion'].includes(p.estado)).length;
+  const prop=state.prospectos.filter(p=>p.estado==='Propuesta').length;
+  const cierre=state.prospectos.length>0?Math.round((cli/state.prospectos.length)*100):0;
+  const totalPipe=activos.filter(p=>p.estado!=='Cliente').reduce((s,p)=>s+(p.valor||0),0);
+  const pipePct=Math.min(100,Math.round((totalPipe/(META_USD*3))*100));
+
+  setIfExists('m-total',activos.length);setIfExists('m-neg',neg);setIfExists('m-prop',prop);setIfExists('m-cierre',cierre+'%');
+  setIfExists('pct-f',factPct+'%'); setBar('bar-f',factPct);
+  setIfExists('pct-c',cliPct+'%'); setBar('bar-c',cliPct);
+  setIfExists('pct-p',pipePct+'%'); setBar('bar-p',pipePct);
+
+  // Clientes tab
+  const clientes=state.prospectos.filter(p=>p.estado==='Cliente');
+  const totalFact=state.facturacionReal||0;
+  const avg=cli>0?Math.round(totalFact/cli):0;
+  setIfExists('cl-n',cli);setIfExists('cl-total','USD '+totalFact.toLocaleString());
+  setIfExists('cl-avg','USD '+avg.toLocaleString());
+  setIfExists('cl-falta','USD '+(Math.max(0,META_USD-totalFact)).toLocaleString());
+  setIfExists('cl-pct',factPct+'%'); setBar('cl-bar',factPct);
+
+  renderInsights(fact,cli,dias,tiempoPct,factPct,totalPipe,neg,prop,sem);
+}
+
+function setIfExists(id,val){const el=document.getElementById(id);if(el)el.textContent=val;}
+function setBar(id,pct){const el=document.getElementById(id);if(el)el.style.width=pct+'%';}
+
+function renderInsights(fact,cli,dias,tiempoPct,factPct,totalPipe,neg,prop,sem){
+  const el=document.getElementById('insights-general'); if(!el)return;
+  const proy=Math.round(totalPipe*.3);
+  const arr=[];
+
+  if(factPct<tiempoPct-20) arr.push({tipo:'red',txt:`⚠️ La facturación (${factPct}%) está <strong>muy por debajo</strong> del tiempo transcurrido (${tiempoPct}%). Necesitás acelerar el cierre de prospectos esta semana.`});
+  else if(factPct<tiempoPct) arr.push({tipo:'warn',txt:`📊 La facturación va <strong>ligeramente detrás</strong> del tiempo. Cerrá al menos 1 prospecto esta semana para mantener el ritmo.`});
+  else if(factPct>0) arr.push({tipo:'green',txt:`✅ La facturación va <strong>por encima del ritmo</strong> esperado. Mantené la presión en el pipeline.`});
+
+  if(proy>=5000) arr.push({tipo:'green',txt:`📈 El pipeline actual proyecta <strong>USD ${proy.toLocaleString()}</strong> al 30% de conversión — suficiente para alcanzar la meta.`});
+  else if(proy>0) arr.push({tipo:'warn',txt:`📉 Al 30% de conversión el pipeline proyecta <strong>USD ${proy.toLocaleString()}</strong>. Necesitás más prospectos o subir el ticket.`});
+  else arr.push({tipo:'red',txt:`❌ No hay valor potencial en el pipeline. Cargá el valor USD de cada prospecto para ver proyecciones.`});
+
+  if(neg>=3) arr.push({tipo:'green',txt:`🔥 Tenés <strong>${neg} prospectos en negociación</strong>. Buen flujo — enfocate en convertirlos a propuesta.`});
+  else arr.push({tipo:'warn',txt:`💬 Solo ${neg} prospectos en negociación. Necesitás más conversaciones activas esta semana.`});
+
+  if(prop>0) arr.push({tipo:'green',txt:`📄 Tenés <strong>${prop} propuesta${prop>1?'s':''} enviada${prop>1?'s':''}</strong>. Hacé seguimiento en las próximas 48hs.`});
+
+  if(dias<30&&fact<4000) arr.push({tipo:'red',txt:`🚨 Quedan <strong>${dias} días</strong> y la facturación está en USD ${fact.toLocaleString()}. Es momento de máxima concentración en cierre.`});
+
+  el.innerHTML=arr.map(a=>`<div class="insight ${a.tipo}" style="margin-bottom:8px">${a.txt}</div>`).join('')||'<div class="insight">Cargá prospectos y actualizá la facturación para ver insights automáticos.</div>';
+}
+
+// ════ FUNNEL ════
+function actualizarFunnel(){
+  const etapas=[['Prospecto','Prospecto'],['Contactado','Contactado'],['Conversacion','Conversación'],['Reunion','Reunión'],['Propuesta','Propuesta'],['Cliente','Cliente']];
+  document.getElementById('funnel').innerHTML=etapas.map(([k,l])=>{
+    const n=state.prospectos.filter(p=>p.estado===k).length;
+    return `<div class="funnel-stage"><div class="funnel-n">${n}</div><div class="funnel-lbl">${l}</div></div>`;
+  }).join('');
+}
+
+// ════ PIPELINE ════
+function renderPipeline(){
+  const activos=state.prospectos.filter(p=>p.estado!=='Sin Interes');
+  const empty=document.getElementById('pipeline-empty');
+  const tbody=document.getElementById('pipeline-body');
+  if(!activos.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  const hoy=new Date().toISOString().slice(0,10);
+  tbody.innerHTML=activos.map(p=>{
+    const segClass=!p.seg?'seg-ok':p.seg<hoy?'seg-pasado':p.seg===hoy?'seg-hoy':'seg-pronto';
+    const segTxt=!p.seg?'—':p.seg<hoy?'⚠️ '+p.seg:p.seg===hoy?'HOY':p.seg;
+    return `<tr>
+      <td style="font-weight:500" title="${p.negocio||''}">${p.negocio||'—'}</td>
+      <td style="color:var(--text2)">${p.rubro||'—'}</td>
+      <td><span class="badge b-${(p.estado||'').replace(' ','')}">${p.estado}</span></td>
+      <td>${p.valor?'USD '+Number(p.valor).toLocaleString():'—'}</td>
+      <td style="color:var(--text2);font-size:11px" title="${p.acc||''}">${p.acc||'—'}</td>
+      <td><span class="badge-seg ${segClass}">${segTxt}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn-edit" onclick="abrirModal(${p._id})">✎ Editar</button>
+        <button class="btn-del" onclick="eliminar(${p._id})">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ════ CLIENTES ════
+function renderClientes(){
+  const clientes=state.prospectos.filter(p=>p.estado==='Cliente');
+  const el=document.getElementById('clientes-list'); if(!el)return;
+  if(!clientes.length){el.innerHTML='<div class="empty">Sin clientes todavía.</div>';return;}
+  el.innerHTML=clientes.map(p=>`
+    <div class="cliente-card">
+      <div class="cliente-card-top">
+        <div>
+          <div class="cliente-nombre">${p.negocio}</div>
+          <div class="cliente-meta">${p.rubro||''}${p.ciudad?' · '+p.ciudad:''} ${p.contacto?' · '+p.contacto:''}</div>
+          ${p.tel?`<div style="font-size:11px;color:var(--text3)">📱 ${p.tel}</div>`:''}
+          ${p.notas?`<div style="font-size:11px;color:var(--text3);margin-top:3px">📝 ${p.notas}</div>`:''}
+        </div>
+        <div style="text-align:right">
+          <div class="cliente-valor">USD ${Number(p.facReal||p.valor||0).toLocaleString()}/mes</div>
+          ${p.seg?`<div style="font-size:10px;color:var(--text3);margin-top:2px">Próx. contacto: ${p.seg}</div>`:''}
+        </div>
+      </div>
+      <div class="cliente-acciones">
+        <button class="btn-edit" onclick="abrirModal(${p._id})">✎ Editar</button>
+        <button class="btn-del" onclick="eliminar(${p._id})">✕ Dar de baja</button>
+      </td>
+    </div>
+  `).join('');
+}
+
+// ════ SEGUIMIENTO ════
+function renderSeguimiento(){
+  const hoy=new Date().toISOString().slice(0,10);
+  const conSeg=state.prospectos
+    .filter(p=>p.seg&&p.estado!=='Sin Interes'&&p.estado!=='Cliente')
+    .sort((a,b)=>a.seg.localeCompare(b.seg));
+  const empty=document.getElementById('seg-empty');
+  const tbody=document.getElementById('seg-body');
+  if(!conSeg.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=conSeg.map(p=>{
+    const vencido=p.seg<hoy, esHoy=p.seg===hoy;
+    const prioClass=vencido?'seg-pasado':esHoy?'seg-hoy':'seg-pronto';
+    const prioTxt=vencido?'⚠️ Vencido':esHoy?'HOY':'Próximamente';
+    return `<tr>
+      <td style="font-weight:500">${p.negocio}</td>
+      <td><span class="badge b-${(p.estado||'').replace(' ','')}">${p.estado}</span></td>
+      <td style="font-size:11px;color:var(--text2)">${p.acc||'—'}</td>
+      <td style="font-size:11px">${p.seg}</td>
+      <td><span class="badge-seg ${prioClass}">${prioTxt}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn-edit" onclick="abrirModal(${p._id})">✎ Editar</button>
+        <button class="btn-del" onclick="eliminar(${p._id})">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ════ NOTIFICACIONES ════
+function calcularNotificaciones(){
+  const hoy=new Date().toISOString().slice(0,10);
+  notifList=[];
+  const dias=diasRestantes(), trans=diasTranscurridos();
+  const tiempoPct=Math.round((trans/DIAS_OBJ)*100);
+  const factPct=Math.min(100,Math.round(((state.facturacionReal||0)/META_USD)*100));
+
+  if(factPct<tiempoPct-15) notifList.push({icon:'🚨',txt:`La facturación (${factPct}%) está muy atrás del tiempo transcurrido (${tiempoPct}%). Acelerá el cierre.`});
+
+  const vencidos=state.prospectos.filter(p=>p.seg&&p.seg<hoy&&p.estado!=='Sin Interes'&&p.estado!=='Cliente');
+  if(vencidos.length) notifList.push({icon:'⏰',txt:`${vencidos.length} seguimiento${vencidos.length>1?'s':''} vencido${vencidos.length>1?'s':''}. Revisá la pestaña Seguimiento.`});
+
+  const deHoy=state.prospectos.filter(p=>p.seg===hoy&&p.estado!=='Sin Interes');
+  if(deHoy.length) notifList.push({icon:'📌',txt:`Tenés ${deHoy.length} seguimiento${deHoy.length>1?'s':''} para HOY.`});
+
+  const inactivos=state.prospectos.filter(p=>{
+    if(['Cliente','Sin Interes'].includes(p.estado))return false;
+    if(!p.fechaCarga)return false;
+    const dias7=new Date(Date.now()-7*24*60*60*1000);
+    return new Date(p.fechaCarga)<dias7;
+  });
+  if(inactivos.length) notifList.push({icon:'💤',txt:`${inactivos.length} prospecto${inactivos.length>1?'s':''} sin movimiento en +7 días.`});
+
+  if(dias<14&&(state.facturacionReal||0)<4500) notifList.push({icon:'🔥',txt:`Quedan ${dias} días para la meta. Enfocate en cierre inmediato.`});
+
+  const dot=document.getElementById('notif-dot');
+  if(dot) dot.classList.toggle('on',notifList.length>0);
+
+  renderNotifPanel();
+  if(notifList.length>0&&!sessionStorage.getItem('mozi_toasted')){
+    sessionStorage.setItem('mozi_toasted','1');
+    notifList.slice(0,2).forEach(n=>toast('Alerta',n.txt,n.icon==='🚨'||n.icon==='🔥'?'red':'amber'));
   }
 }
 
-function readData() {
-  try {
-    const sheet = getSheet();
-    const raw   = sheet.getRange(2, 1).getValue();
-    if (!raw || raw === '{}' || raw === '') {
-      return { prospectos: [], facturacionReal: 0, nextId: 1, rubrosExtra: [], ciudadesExtra: [] };
-    }
-    const data = JSON.parse(raw);
-    // Asegurar que tenga todas las claves necesarias
-    if (!data.prospectos) data.prospectos = [];
-    if (!data.rubrosExtra) data.rubrosExtra = [];
-    if (!data.ciudadesExtra) data.ciudadesExtra = [];
-    return data;
-  } catch(err) {
-    return { error: err.toString() };
-  }
+function renderNotifPanel(){
+  const el=document.getElementById('notif-list'); if(!el)return;
+  el.innerHTML=notifList.length
+    ?notifList.map(n=>`<div class="notif-item"><div class="notif-icon">${n.icon}</div><div>${n.txt}</div></div>`).join('')
+    :'<div class="notif-empty">Sin alertas activas 👌</div>';
 }
 
-function setData(dataStr) {
-  try {
-    const data = JSON.parse(dataStr);
-    const sheet = getSheet();
-    sheet.getRange(2, 1).setValue(JSON.stringify(data));
-    SpreadsheetApp.flush();
-    return { ok: true, savedAt: new Date().toISOString() };
-  } catch(err) {
-    return { error: err.toString() };
-  }
+function toggleNotif(){
+  notifOpen=!notifOpen;
+  document.getElementById('notif-panel').classList.toggle('open',notifOpen);
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#notif-panel')&&!e.target.closest('#notif-btn'))
+    {notifOpen=false;document.getElementById('notif-panel').classList.remove('open');}
+});
+
+// ════ TOAST ════
+function toast(title,msg,tipo='amber'){
+  const w=document.getElementById('toast-wrap'); if(!w)return;
+  const d=document.createElement('div'); d.className=`toast ${tipo}`;
+  d.innerHTML=`<div class="toast-icon">${tipo==='red'?'🚨':tipo==='green'?'✅':'⚠️'}</div><div class="toast-body"><div class="toast-title">${title}</div><div class="toast-msg">${msg}</div></div><button class="toast-x" onclick="this.closest('.toast').remove()">✕</button>`;
+  w.appendChild(d); setTimeout(()=>d.remove(),6000);
 }
 
-function buildResponse(obj) {
-  return ContentService
-    .createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
+// ════ RITUALES ════
+function renderRituales(){
+  renderRitualPanel('diario',RITUALES_DIARIO,'rp-diario');
+  renderRitualPanel('inicio',RITUALES_INICIO,'rp-inicio');
+  renderRitualPanel('cierre',RITUALES_CIERRE,'rp-cierre');
 }
+
+function renderRitualPanel(tipo,lista,panelId){
+  const panel=document.getElementById(panelId); if(!panel)return;
+  const dias=diasRestantes();
+  const fact=state.facturacionReal||0;
+  const falta=META_USD-fact;
+  const header=tipo==='diario'
+    ?`<div class="alert-box ab-info" style="margin-bottom:14px"><strong>🎯 Objetivo de hoy:</strong> acercar a GrowyFunnels a USD 5.000/mes. Faltan <strong>USD ${falta.toLocaleString()}</strong> y <strong>${dias} días</strong>.</div>`
+    :tipo==='inicio'
+    ?`<div class="alert-box ab-info" style="margin-bottom:14px"><strong>🚀 Inicio de semana.</strong> Faltan <strong>USD ${falta.toLocaleString()}</strong> para la meta y <strong>${dias} días</strong>. Esta semana importa.</div>`
+    :`<div class="alert-box ab-warn" style="margin-bottom:14px"><strong>📊 Cierre de semana.</strong> Revisá honestamente qué hiciste y qué ajustás. La meta es USD 5.000 en <strong>${dias} días</strong>.</div>`;
+  const items=lista.map((r,i)=>{
+    const key=`${tipo}-${i}`;
+    const done=ritualesEstado[key]||false;
+    return `<div class="ritual-row">
+      <input type="checkbox" class="ritual-check" id="rc-${key}" ${done?'checked':''} onchange="toggleRitual('${key}')">
+      <div>
+        <label for="rc-${key}" class="ritual-lbl${done?' done':''}">${r.t}</label>
+        <div class="ritual-sub">${r.s}</div>
+      </div>
+    </div>`;
+  }).join('');
+  panel.innerHTML=header+items;
+}
+
+function toggleRitual(key){
+  ritualesEstado[key]=!ritualesEstado[key];
+  renderRituales(); guardarRitualesLocal();
+}
+
+function switchRitualTab(name){
+  ['diario','inicio','cierre'].forEach((t,i)=>{
+    document.getElementById('rp-'+t).classList.toggle('active',t===name);
+    document.querySelectorAll('.rt')[i].classList.toggle('active',t===name);
+  });
+}
+
+// ════ CHARTS ════
+function destroyChart(key){if(charts[key]){charts[key].destroy();delete charts[key];}}
+
+function renderCharts(sub){
+  if(sub==='general') return;
+  if(sub==='pipeline-vis'){renderChartEtapas();renderPipelineComparativo();renderChartValorEtapa();}
+  if(sub==='rubros-vis'){renderChartRubros();}
+  if(sub==='ciudades-vis'){renderChartCiudades();}
+}
+
+function mkChart(id,key,type,labels,datasets,opts={}){
+  destroyChart(key);
+  const el=document.getElementById(id); if(!el)return;
+  charts[key]=new Chart(el.getContext('2d'),{type,data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:opts.legend||false}},scales:type==='bar'?{x:{ticks:{color:'#999',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#999',stepSize:1},grid:{color:'rgba(0,0,0,.05)'},beginAtZero:true}}:undefined,...(opts.scales||{})}});
+}
+
+function renderChartEtapas(){
+  const etapas=['Prospecto','Contactado','Conversacion','Reunion','Propuesta','Cliente'];
+  const labels=['Prospecto','Contactado','Conversación','Reunión','Propuesta','Cliente'];
+  const counts=etapas.map(e=>state.prospectos.filter(p=>p.estado===e).length);
+  const colors=['#B5D4F4','#85B7EB','#FAC775','#C0DD97','#9FE1CB','#0F6E56'];
+  mkChart('chartEtapas','etapas','bar',labels,[{label:'Prospectos',data:counts,backgroundColor:colors,borderRadius:6,borderSkipped:false}]);
+}
+
+function renderPipelineComparativo(){
+  const el=document.getElementById('pipeline-comparativo'); if(!el)return;
+  const etapas=['Prospecto','Contactado','Conversacion','Reunion','Propuesta','Cliente'];
+  const labels={'Prospecto':'Prospecto','Contactado':'Contactado','Conversacion':'Conversación','Reunion':'Reunión','Propuesta':'Propuesta','Cliente':'Cliente'};
+  const maxVal=Math.max(...etapas.map(e=>{
+    const ps=state.prospectos.filter(p=>p.estado===e);
+    return Math.max(ps.reduce((s,p)=>s+(p.valor||0),0),ps.reduce((s,p)=>s+(p.facReal||0),0));
+  }),1);
+  el.innerHTML=etapas.map(e=>{
+    const ps=state.prospectos.filter(p=>p.estado===e);
+    const potencial=ps.reduce((s,p)=>s+(p.valor||0),0);
+    const real=ps.reduce((s,p)=>s+(p.facReal||0),0);
+    const pPct=Math.round((potencial/maxVal)*100);
+    const rPct=Math.round((real/maxVal)*100);
+    return `<div class="prog-double">
+      <div class="prog-double-hdr">
+        <span class="lbl">${labels[e]}</span>
+        <span style="font-size:11px;color:var(--text)">Pot: USD ${potencial.toLocaleString()} / Real: USD ${real.toLocaleString()}</span>
+      </div>
+      <div class="prog-stack">
+        <div class="prog-bg"><div class="prog-fill fill-blue" style="width:${pPct}%"></div></div>
+        <div class="prog-bg"><div class="prog-fill fill-green" style="width:${rPct}%"></div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderChartValorEtapa(){
+  const etapas=['Prospecto','Contactado','Conversacion','Reunion','Propuesta','Cliente'];
+  const labels=['Prospecto','Contactado','Conversación','Reunión','Propuesta','Cliente'];
+  const valores=etapas.map(e=>state.prospectos.filter(p=>p.estado===e).reduce((s,p)=>s+(p.valor||0),0));
+  const colors=['#B5D4F4','#85B7EB','#FAC775','#C0DD97','#9FE1CB','#0F6E56'];
+  mkChart('chartValorEtapa','valorEtapa','bar',labels,[{label:'USD potencial',data:valores,backgroundColor:colors,borderRadius:6,borderSkipped:false}]);
+}
+
+function renderChartRubros(){
+  const rubros=[...new Set(state.prospectos.filter(p=>p.rubro).map(p=>p.rubro))];
+  if(!rubros.length)return;
+  const counts=rubros.map(r=>state.prospectos.filter(p=>p.rubro===r).length);
+  const valores=rubros.map(r=>state.prospectos.filter(p=>p.rubro===r).reduce((s,p)=>s+(p.valor||0),0));
+  const colors=rubros.map((_,i)=>`hsl(${(i*47)%360},55%,60%)`);
+  mkChart('chartRubros','rubros','doughnut',rubros,[{data:counts,backgroundColor:colors}],{legend:true});
+  mkChart('chartRubrosValor','rubrosValor','bar',rubros,[{label:'USD potencial',data:valores,backgroundColor:colors,borderRadius:6,borderSkipped:false}]);
+  const tablaEl=document.getElementById('tabla-rubros'); if(!tablaEl)return;
+  tablaEl.innerHTML=`<table><thead><tr><th>Rubro</th><th>Prospectos</th><th>Clientes</th><th>Valor pot.</th></tr></thead><tbody>`+
+    rubros.map(r=>{
+      const ps=state.prospectos.filter(p=>p.rubro===r);
+      const cl=ps.filter(p=>p.estado==='Cliente').length;
+      const val=ps.reduce((s,p)=>s+(p.valor||0),0);
+      return `<tr><td>${r}</td><td>${ps.length}</td><td>${cl}</td><td>USD ${val.toLocaleString()}</td></tr>`;
+    }).join('')+'</tbody></table>';
+}
+
+function renderChartCiudades(){
+  const ciudades=[...new Set(state.prospectos.filter(p=>p.ciudad).map(p=>p.ciudad))];
+  if(!ciudades.length)return;
+  const counts=ciudades.map(c=>state.prospectos.filter(p=>p.ciudad===c).length);
+  const clientes=ciudades.map(c=>state.prospectos.filter(p=>p.ciudad===c&&p.estado==='Cliente').length);
+  const colors=ciudades.map((_,i)=>`hsl(${200+(i*53)%160},55%,55%)`);
+  mkChart('chartCiudades','ciudades','bar',ciudades,[{label:'Prospectos',data:counts,backgroundColor:colors,borderRadius:6,borderSkipped:false}]);
+  mkChart('chartCiudadesClientes','ciudadesClientes','bar',ciudades,[{label:'Clientes',data:clientes,backgroundColor:colors,borderRadius:6,borderSkipped:false}]);
+}
+
+// ════ MODAL EDICIÓN ════
+function abrirModal(id){
+  const p=state.prospectos.find(x=>x._id===id); if(!p)return;
+  editingId=id;
+  poblarSelects();
+  document.getElementById('e-neg').value=p.negocio||'';
+  document.getElementById('e-con').value=p.contacto||'';
+  document.getElementById('e-rub').value=p.rubro||'';
+  document.getElementById('e-ciu').value=p.ciudad||'';
+  document.getElementById('e-est').value=p.estado||'Prospecto';
+  document.getElementById('e-val').value=p.valor||'';
+  document.getElementById('e-acc').value=p.acc||'';
+  document.getElementById('e-seg').value=p.seg||'';
+  document.getElementById('e-tel').value=p.tel||'';
+  document.getElementById('e-notas').value=p.notas||'';
+  document.getElementById('e-fac').value=p.facReal||'';
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function cerrarModal(){editingId=null;document.getElementById('modal-overlay').classList.remove('open');}
+
+async function guardarEdicion(){
+  if(!editingId)return;
+  const idx=state.prospectos.findIndex(x=>x._id===editingId); if(idx<0)return;
+  const p=state.prospectos[idx];
+  const prevFacReal=p.facReal||0, prevEsCliente=p.estado==='Cliente';
+  p.negocio=document.getElementById('e-neg').value.trim()||p.negocio;
+  p.contacto=document.getElementById('e-con').value.trim();
+  p.rubro=document.getElementById('e-rub').value;
+  p.ciudad=document.getElementById('e-ciu').value;
+  p.estado=document.getElementById('e-est').value;
+  p.valor=parseFloat(document.getElementById('e-val').value)||0;
+  p.acc=document.getElementById('e-acc').value.trim();
+  p.seg=document.getElementById('e-seg').value;
+  p.tel=document.getElementById('e-tel').value.trim();
+  p.notas=document.getElementById('e-notas').value.trim();
+  const newFacReal=parseFloat(document.getElementById('e-fac').value)||0;
+  if(p.estado==='Cliente'){
+    state.facturacionReal=(state.facturacionReal||0)-prevFacReal+newFacReal;
+    p.facReal=newFacReal;
+  } else if(prevEsCliente){
+    state.facturacionReal=Math.max(0,(state.facturacionReal||0)-prevFacReal);
+    p.facReal=0;
+  }
+  state.prospectos[idx]=p;
+  cerrarModal(); guardarLocal(); actualizarTodo(); calcularNotificaciones();
+  setStatus('Guardando...','saving');
+  await enviarASheets({action:'set',data:state});
+  setStatus('Guardado','saved'); setTimeout(()=>setStatus('',''),2500);
+  toast('Guardado',`${p.negocio} actualizado correctamente`,'green');
+}
+
+// ════ ACCIONES PIPELINE ════
+async function agregarProspecto(){
+  const negocio=document.getElementById('f-neg').value.trim();
+  if(!negocio){alert('El nombre del negocio es obligatorio.');return;}
+  const estado=document.getElementById('f-est').value;
+  const valor=parseFloat(document.getElementById('f-val').value)||0;
+  const facReal=parseFloat(document.getElementById('f-fac').value)||0;
+  if(estado==='Cliente'&&facReal>0) state.facturacionReal=(state.facturacionReal||0)+facReal;
+  const p={
+    _id:state.nextId++, negocio,
+    contacto:document.getElementById('f-con').value.trim(),
+    rubro:document.getElementById('f-rub').value,
+    ciudad:document.getElementById('f-ciu').value,
+    estado, valor,
+    acc:document.getElementById('f-acc').value.trim(),
+    seg:document.getElementById('f-seg').value,
+    tel:document.getElementById('f-tel').value.trim(),
+    notas:document.getElementById('f-notas').value.trim(),
+    facReal:estado==='Cliente'?facReal:0,
+    fechaCarga:new Date().toISOString().slice(0,10),
+  };
+  state.prospectos.push(p);
+  ['f-neg','f-con','f-val','f-acc','f-seg','f-tel','f-notas','f-fac'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('f-rub').selectedIndex=0;
+  document.getElementById('f-est').selectedIndex=0;
+  guardarLocal(); actualizarTodo(); calcularNotificaciones();
+  switchTab('pipeline');
+  setStatus('Guardando...','saving');
+  await enviarASheets({action:'set',data:state});
+  setStatus('Guardado','saved'); setTimeout(()=>setStatus('',''),2500);
+  toast('Agregado',`${p.negocio} cargado al pipeline`,'green');
+}
+
+async function eliminar(id){
+  const p=state.prospectos.
