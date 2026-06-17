@@ -872,7 +872,7 @@ function renderClientes(){
       <div class="cliente-acciones">
         <button class="btn-edit" onclick="abrirModal(${p._id})">✎ Editar</button>
         <button class="btn-del" onclick="eliminar(${p._id})">✕ Dar de baja</button>
-      </td>
+      </div>
     </div>
   `).join('');
 }
@@ -1181,4 +1181,131 @@ async function agregarProspecto(){
 }
 
 async function eliminar(id){
-  const p=state.prospectos.
+  const p=state.prospectos.find(x=>x._id===id); if(!p)return;
+  if(!confirm(`¿Eliminás "${p.negocio}" del pipeline?`))return;
+  if(p.estado==='Cliente') state.facturacionReal=Math.max(0,(state.facturacionReal||0)-(p.facReal||0));
+  state.prospectos=state.prospectos.filter(x=>x._id!==id);
+  guardarLocal(); actualizarTodo(); calcularNotificaciones();
+  setStatus('Guardando...','saving');
+  await enviarASheets({action:'set',data:state});
+  setStatus('Guardado','saved'); setTimeout(()=>setStatus('',''),2500);
+}
+
+async function setFacturacion(){
+  const val=parseFloat(document.getElementById('f-totfac').value);
+  if(isNaN(val)||val<0)return;
+  state.facturacionReal=val;
+  document.getElementById('f-totfac').value='';
+  guardarLocal(); actualizarTodo(); calcularNotificaciones();
+  setStatus('Guardando...','saving');
+  await enviarASheets({action:'set',data:state});
+  setStatus('Guardado','saved'); setTimeout(()=>setStatus('',''),2500);
+}
+
+async function confirmarReset(){
+  if(!confirm('¿Seguro que querés borrar todos los datos? No se puede deshacer.'))return;
+  state={prospectos:[],facturacionReal:0,nextId:1,rubrosExtra:[],ciudadesExtra:[]};
+  guardarLocal(); poblarSelects(); actualizarTodo(); renderListasCustom(); calcularNotificaciones();
+  await enviarASheets({action:'set',data:state});
+  setStatus('Datos borrados','saved'); setTimeout(()=>setStatus('',''),2500);
+}
+
+// ════ ACTUALIZAR TODO ════
+function actualizarTodo(){
+  actualizarNorthStar(); actualizarFunnel();
+  renderPipeline(); renderClientes(); renderSeguimiento(); renderRituales();
+  if(currentSubtab!=='general') renderCharts(currentSubtab);
+}
+
+// ════ NAVEGACIÓN ════
+function switchTab(name){
+  ['pipeline','vision','clientes','seguimiento','rituales','cargar'].forEach((t,i)=>{
+    document.getElementById('tab-'+t).classList.toggle('active',t===name);
+    document.querySelectorAll('.tab')[i].classList.toggle('active',t===name);
+  });
+  if(name==='vision') renderCharts(currentSubtab);
+}
+
+function switchSubtab(name){
+  currentSubtab=name;
+  ['sub-general','sub-pipeline-vis','sub-rubros-vis','sub-ciudades-vis'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.classList.remove('active');
+  });
+  const map={'general':'sub-general','pipeline-vis':'sub-pipeline-vis','rubros-vis':'sub-rubros-vis','ciudades-vis':'sub-ciudades-vis'};
+  const el=document.getElementById(map[name]); if(el) el.classList.add('active');
+  document.querySelectorAll('.subtab').forEach((b,i)=>{
+    b.classList.toggle('active',['general','pipeline-vis','rubros-vis','ciudades-vis'][i]===name);
+  });
+  renderCharts(name);
+}
+
+function switchRitualTab(name){
+  ['diario','inicio','cierre'].forEach((t,i)=>{
+    document.getElementById('rp-'+t).classList.toggle('active',t===name);
+    document.querySelectorAll('.rt')[i].classList.toggle('active',t===name);
+  });
+}
+
+// ════ SYNC ════
+function sincronizar(){
+  if(!scriptURL)return;
+  setStatus('Sincronizando...','saving');
+  document.getElementById('sync-btn').disabled=true;
+  const cb='moziGetCb'+Date.now();
+  const timeout=setTimeout(()=>{
+    const old=document.getElementById('mozi-jsonp-get');if(old)old.remove();
+    delete window[cb];
+    setStatus('Sin conexión — usando datos locales','');
+    document.getElementById('sync-btn').disabled=false;
+  },10000);
+  window[cb]=(data)=>{
+    clearTimeout(timeout);
+    const old=document.getElementById('mozi-jsonp-get');if(old)old.remove();
+    delete window[cb];
+    if(data&&Array.isArray(data.prospectos)){
+      state=data;
+      if(!state.rubrosExtra)state.rubrosExtra=[];
+      if(!state.ciudadesExtra)state.ciudadesExtra=[];
+      guardarLocal(); poblarSelects(); renderListasCustom();
+      actualizarTodo(); calcularNotificaciones();
+      setStatus('Sincronizado con Google Sheets','saved');
+    } else {setStatus('Sin datos en Sheets todavía','');}
+    document.getElementById('sync-btn').disabled=false;
+    setTimeout(()=>setStatus('',''),4000);
+  };
+  const s=document.createElement('script');s.id='mozi-jsonp-get';
+  s.src=scriptURL+'?action=get&callback='+cb+'&t='+Date.now();
+  s.onerror=()=>{clearTimeout(timeout);const old=document.getElementById('mozi-jsonp-get');if(old)old.remove();delete window[cb];setStatus('Error al conectar','');document.getElementById('sync-btn').disabled=false;};
+  const prev=document.getElementById('mozi-jsonp-get');if(prev)prev.remove();
+  document.head.appendChild(s);
+}
+
+function enviarASheets(payload){
+  return new Promise((resolve)=>{
+    if(!scriptURL){resolve();return;}
+    const iframeId='mozi-save-iframe', formId='mozi-save-form';
+    const pi=document.getElementById(iframeId);if(pi)pi.remove();
+    const pf=document.getElementById(formId);if(pf)pf.remove();
+    const iframe=document.createElement('iframe');
+    iframe.id=iframeId;iframe.name=iframeId;iframe.style.display='none';
+    document.body.appendChild(iframe);
+    const form=document.createElement('form');
+    form.id=formId;form.method='POST';form.action=scriptURL;form.target=iframeId;form.style.display='none';
+    const addF=(n,v)=>{const i=document.createElement('input');i.type='hidden';i.name=n;i.value=v;form.appendChild(i);};
+    addF('action','set');addF('data',JSON.stringify(payload.data));
+    document.body.appendChild(form);
+    const timeout=setTimeout(()=>resolve(),8000);
+    iframe.onload=()=>{clearTimeout(timeout);resolve();};
+    form.submit();
+  });
+}
+
+function setStatus(msg,tipo){
+  const el=document.getElementById('status-bar');if(!el)return;
+  el.textContent=msg;el.className='status-bar'+(tipo?' '+tipo:'');
+}
+
+init();
+</script>
+</body>
+</html>
